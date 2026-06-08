@@ -1,0 +1,1985 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon LP 画像プロンプトジェネレーター</title>
+<style>
+  :root {
+    --orange: #FF9900;
+    --dark: #232F3E;
+    --blue: #146EB4;
+    --light-bg: #F5F5F5;
+    --border: #DDDDDD;
+    --success: #067D62;
+    --warning: #C7511F;
+    --purple: #6C3483;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light-bg); color: #111; }
+
+  header { background: var(--dark); color: white; padding: 14px 24px; }
+  header .logo { font-size: 20px; font-weight: 700; color: var(--orange); }
+  header .subtitle { font-size: 12px; color: #ccc; margin-top: 2px; }
+
+  .tabs { background: white; border-bottom: 2px solid var(--border); display: flex; padding: 0 20px; }
+  .tab { padding: 13px 18px; font-size: 13px; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; user-select: none; }
+  .tab:hover { color: var(--dark); }
+  .tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  .full-width { grid-column: 1 / -1; }
+
+  .card { background: white; border-radius: 8px; border: 1px solid var(--border); padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .card h2 { font-size: 14px; font-weight: 700; margin-bottom: 14px; padding-bottom: 9px; border-bottom: 2px solid var(--orange); color: var(--dark); display: flex; align-items: center; gap: 6px; }
+  .card h3 { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--dark); }
+
+  label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 3px; color: #333; }
+  .hint { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .required { color: var(--warning); margin-left: 2px; }
+  .field { margin-bottom: 12px; }
+  input[type=text], textarea, select {
+    width: 100%; padding: 8px 11px; border: 1px solid var(--border);
+    border-radius: 4px; font-size: 12px; color: #111; transition: border-color 0.2s; font-family: inherit;
+  }
+  input[type=text]:focus, textarea:focus, select:focus {
+    outline: none; border-color: var(--blue); box-shadow: 0 0 0 2px rgba(20,110,180,0.12);
+  }
+  textarea { resize: vertical; min-height: 60px; }
+
+  /* チェックボックスグリッド */
+  .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #444; cursor: pointer; padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; transition: all 0.2s; user-select: none; }
+  .checkbox-item:hover { border-color: var(--orange); background: #FFF8EE; }
+  .checkbox-item.checked { border-color: var(--orange); background: #FFF3DC; color: #333; font-weight: 600; }
+  .checkbox-item input { display: none; }
+  .check-icon { font-size: 13px; }
+
+  /* 画像タイプグリッド */
+  .image-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .type-card { border: 2px solid var(--border); border-radius: 6px; padding: 9px; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .type-card:hover { border-color: var(--orange); background: #FFF8EE; }
+  .type-card.selected { border-color: var(--orange); background: #FFF3DC; }
+  .type-card .icon { font-size: 20px; display: block; margin-bottom: 3px; }
+  .type-card .name { font-size: 11px; font-weight: 700; color: var(--dark); }
+  .type-card .desc { font-size: 10px; color: #666; margin-top: 1px; }
+
+  /* カルーセル戦略 */
+  .carousel-track { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+  .carousel-step {
+    flex: 0 0 130px; border: 2px solid var(--border); border-radius: 7px;
+    padding: 10px 8px; cursor: pointer; text-align: center; transition: all 0.2s;
+  }
+  .carousel-step:hover { border-color: var(--blue); background: #EEF7FF; }
+  .carousel-step.active { border-color: var(--orange); background: #FFF3DC; }
+  .carousel-step .cs-num { font-size: 10px; font-weight: 700; color: #999; margin-bottom: 3px; }
+  .carousel-step .cs-icon { font-size: 18px; margin-bottom: 3px; }
+  .carousel-step .cs-name { font-size: 10px; font-weight: 700; color: var(--dark); }
+  .carousel-step .cs-frame { font-size: 9px; color: #888; margin-top: 1px; }
+
+  /* フレームワークバッジ */
+  .fw-badge {
+    display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px;
+    border-radius: 10px; margin-right: 4px;
+  }
+  .fw-aida { background: #D5E8D4; color: #2D6A2D; }
+  .fw-pas  { background: #FFE6CC; color: #A0522D; }
+  .fw-fab  { background: #DAE8FC; color: #1A5276; }
+  .fw-emo  { background: #E8DAEF; color: #6C3483; }
+
+  /* ボタン */
+  .btn-primary { width: 100%; padding: 12px; background: var(--orange); color: white; font-size: 14px; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; margin-top: 6px; transition: background 0.2s; }
+  .btn-primary:hover { background: #e68a00; }
+  .btn-sm { padding: 6px 13px; font-size: 12px; font-weight: 600; border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+  .btn-blue { background: var(--blue); color: white; }
+  .btn-blue:hover { background: #0f5a96; }
+
+  /* 出力エリア */
+  .output-area { position: relative; }
+  .prompt-box {
+    background: #F8F9FA; border: 1px solid var(--border); border-radius: 6px;
+    padding: 14px; font-size: 12px; line-height: 1.8; white-space: pre-wrap;
+    min-height: 140px; color: #222; font-family: 'Segoe UI', sans-serif;
+  }
+  .prompt-box.empty { color: #aaa; font-style: italic; }
+  .btn-copy {
+    position: absolute; top: 8px; right: 8px; padding: 5px 12px;
+    background: var(--blue); color: white; border: none; border-radius: 4px;
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+  }
+  .btn-copy:hover { background: #0f5a96; }
+  .btn-copy.copied { background: var(--success); }
+
+  /* ===== バリエーションカード ===== */
+  .var-count-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .var-count-row label { font-size: 12px; font-weight: 600; color: #333; white-space: nowrap; }
+  .var-count-btn { padding: 5px 13px; border: 2px solid var(--border); border-radius: 20px; background: white; font-size: 12px; font-weight: 700; cursor: pointer; color: #666; transition: all 0.15s; }
+  .var-count-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .var-count-btn.active { border-color: var(--orange); background: var(--orange); color: white; }
+
+  .variations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .var-card {
+    border: 2px solid var(--border); border-radius: 8px; overflow: hidden;
+    background: white; transition: all 0.2s; cursor: default;
+  }
+  .var-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+  .var-card.selected { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,153,0,0.2); }
+  .var-card-header {
+    padding: 8px 12px; display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .var-lens-icon { font-size: 18px; }
+  .var-lens-name { font-size: 12px; font-weight: 700; color: var(--dark); flex: 1; }
+  .var-lens-tag { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+  .tag-cinematic  { background: #2C3E50; color: white; }
+  .tag-minimal    { background: #ECF0F1; color: #555; border: 1px solid #ddd; }
+  .tag-natural    { background: #D5F5E3; color: #1E8449; }
+  .tag-dramatic   { background: #FDEDEC; color: #C0392B; }
+  .tag-story      { background: #EAF2FF; color: #1A5276; }
+
+  .var-card-body { padding: 10px 12px; }
+  .var-prompt-text {
+    font-size: 11px; line-height: 1.7; white-space: pre-wrap; color: #333;
+    max-height: 130px; overflow-y: auto; margin-bottom: 8px;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  .var-card-footer { display: flex; gap: 6px; align-items: center; padding-top: 8px; border-top: 1px solid #f0f0f0; }
+  .var-select-btn {
+    flex: 1; padding: 5px 0; border: 2px solid var(--orange); border-radius: 4px;
+    background: white; color: var(--orange); font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .var-card.selected .var-select-btn { background: var(--orange); color: white; }
+  .var-copy-btn {
+    padding: 5px 10px; border: 1px solid var(--border); border-radius: 4px;
+    background: white; color: #666; font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .var-copy-btn:hover { background: var(--blue); color: white; border-color: var(--blue); }
+  .var-copy-btn.copied { background: var(--success); color: white; border-color: var(--success); }
+
+  /* 選択バー＆掛け合わせ */
+  .combine-bar {
+    background: #FFF3DC; border: 2px solid var(--orange); border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 12px; display: none;
+  }
+  .combine-bar.visible { display: block; }
+  .combine-bar-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .combine-bar-top .cb-label { font-size: 13px; font-weight: 700; color: #5a3a00; flex: 1; }
+  .combine-selected-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .combine-tag {
+    font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 12px;
+    background: white; border: 1px solid var(--orange); color: #8a5000;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .combine-tag .ct-icon { font-size: 13px; }
+  .combine-what { font-size: 11px; color: #666; margin-bottom: 8px; line-height: 1.5; }
+  .btn-combine {
+    padding: 9px 20px; background: var(--dark); color: white; font-size: 13px;
+    font-weight: 700; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;
+  }
+  .btn-combine:hover { background: #374151; }
+  .btn-clear-sel { padding: 9px 14px; background: white; color: #888; font-size: 12px; font-weight: 600; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
+  .btn-clear-sel:hover { background: #f5f5f5; }
+
+  /* 掛け合わせ結果 */
+  .combine-result { border: 2px solid var(--dark); border-radius: 8px; overflow: hidden; margin-top: 14px; }
+  .combine-result-header {
+    background: var(--dark); color: white; padding: 9px 14px;
+    font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+  }
+  .combine-result-body { padding: 12px 14px; position: relative; background: #FAFAFA; }
+  .combine-prompt-text { font-size: 12px; line-height: 1.8; white-space: pre-wrap; color: #222; font-family: 'Segoe UI', sans-serif; }
+  .combine-copy-btn {
+    position: absolute; top: 10px; right: 10px;
+    padding: 5px 12px; background: var(--blue); color: white; border: none;
+    border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .combine-copy-btn:hover { background: #0f5a96; }
+  .combine-copy-btn.copied { background: var(--success); }
+
+  .empty-variations { text-align: center; color: #bbb; padding: 40px 20px; font-size: 13px; border: 2px dashed var(--border); border-radius: 8px; }
+  .empty-variations .ev-icon { font-size: 40px; display: block; margin-bottom: 8px; }
+
+  /* ===== 戦略タブ ===== */
+  .strategy-section { margin-bottom: 20px; }
+  .step-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid var(--orange);
+  }
+  .step-num-badge {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--orange);
+    color: white; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .step-title { font-size: 15px; font-weight: 700; color: var(--dark); }
+  .step-sub   { font-size: 11px; color: #888; margin-left: auto; }
+
+  .product-upload-area {
+    border: 2px dashed var(--border); border-radius: 8px; padding: 18px;
+    text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; background: #fafafa;
+  }
+  .product-upload-area:hover { border-color: var(--orange); background: #FFF8EE; }
+  .product-preview-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .product-thumb {
+    width: 80px; height: 80px; border-radius: 6px; border: 1px solid var(--border);
+    object-fit: contain; background: #f9f9f9; cursor: pointer; position: relative;
+  }
+  .product-thumb-wrap { position: relative; display: inline-block; }
+  .product-thumb-del {
+    position: absolute; top: -6px; right: -6px; background: #c0392b; color: white;
+    border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 11px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;
+  }
+
+  .competitor-row { display: flex; gap: 6px; align-items: flex-start; margin-bottom: 8px; }
+  .competitor-row input { flex: 1; }
+  .btn-add-competitor {
+    padding: 7px 13px; border: 2px dashed var(--border); border-radius: 6px;
+    background: white; color: #888; font-size: 12px; font-weight: 600;
+    cursor: pointer; width: 100%; transition: all 0.2s; margin-bottom: 12px;
+  }
+  .btn-add-competitor:hover { border-color: var(--blue); color: var(--blue); }
+
+  .review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .review-box { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .review-box-header { padding: 7px 12px; font-size: 12px; font-weight: 700; }
+  .review-box.positive .review-box-header { background: #D5F5E3; color: #1E8449; }
+  .review-box.negative .review-box-header { background: #FDEDEC; color: #C0392B; }
+  .review-box textarea {
+    border: none; border-radius: 0; min-height: 100px;
+    font-size: 11px; resize: vertical; background: white;
+  }
+  .review-box textarea:focus { box-shadow: none; border: none; }
+
+  .strategy-output-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 0; }
+  .s-tab {
+    padding: 9px 16px; font-size: 12px; font-weight: 600; color: #666;
+    cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;
+    background: white; border-top: 1px solid var(--border); border-right: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .s-tab:first-child { border-left: 1px solid var(--border); border-radius: 6px 0 0 0; }
+  .s-tab:last-child  { border-radius: 0 6px 0 0; }
+  .s-tab.active { color: var(--orange); border-bottom-color: white; background: white; font-weight: 700; }
+  .s-tab:hover:not(.active) { color: var(--dark); background: #f9f9f9; }
+
+  .strategy-output-panel {
+    display: none; border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 8px 8px; background: white; padding: 14px; position: relative;
+  }
+  .strategy-output-panel.active { display: block; }
+  .strategy-prompt-text {
+    font-size: 12px; line-height: 1.8; white-space: pre-wrap; color: #222;
+    font-family: 'Segoe UI', sans-serif; min-height: 120px;
+  }
+  .strategy-empty { color: #aaa; font-style: italic; font-size: 13px; text-align: center; padding: 30px; }
+
+  .btn-gen-strategy {
+    width: 100%; padding: 14px; background: var(--dark); color: white;
+    font-size: 15px; font-weight: 700; border: none; border-radius: 8px;
+    cursor: pointer; margin: 16px 0; transition: background 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-gen-strategy:hover { background: #374151; }
+
+  .chatgpt-tip {
+    background: #F0FFF4; border: 1px solid #A9DFBF; border-radius: 8px;
+    padding: 12px 16px; font-size: 12px; color: #1E8449; margin-bottom: 14px;
+    line-height: 1.6;
+  }
+  .chatgpt-tip strong { color: #145A32; }
+
+  .flow-steps { display: flex; gap: 0; margin-bottom: 16px; flex-wrap: wrap; }
+  .flow-step {
+    flex: 1; min-width: 120px; background: white; border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 8px; text-align: center; position: relative; font-size: 11px;
+  }
+  .flow-step + .flow-step::before {
+    content: '→'; position: absolute; left: -12px; top: 50%; transform: translateY(-50%);
+    color: var(--orange); font-weight: 700; font-size: 14px;
+  }
+  .flow-step .fs-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+  .flow-step .fs-label { font-weight: 700; color: var(--dark); }
+  .flow-step .fs-sub { color: #888; font-size: 10px; margin-top: 2px; }
+
+  /* 規約リスト */
+  .rules-list { list-style: none; }
+  .rules-list li { font-size: 12px; padding: 5px 0 5px 18px; border-bottom: 1px solid #f0f0f0; position: relative; color: #444; line-height: 1.5; }
+  .rules-list li:last-child { border-bottom: none; }
+  .rules-list li::before { content: '✓'; position: absolute; left: 0; color: var(--success); font-weight: 700; }
+  .rules-list li.ng::before { content: '✕'; color: var(--warning); }
+
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-right: 3px; }
+  .badge-main { background: #232F3E; color: white; }
+  .badge-sub  { background: #146EB4; color: white; }
+  .badge-all  { background: #067D62; color: white; }
+
+  .lang-toggle { display: flex; gap: 6px; margin-bottom: 10px; }
+  .lang-btn { padding: 5px 13px; border: 1px solid var(--border); border-radius: 4px; background: white; font-size: 12px; font-weight: 600; cursor: pointer; color: #555; }
+  .lang-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
+
+  .tip { background: #EEF7FF; border-left: 3px solid var(--blue); padding: 7px 11px; font-size: 11px; color: #334; border-radius: 0 4px 4px 0; margin-top: 8px; line-height: 1.5; }
+  .tip-orange { background: #FFF8EE; border-left: 3px solid var(--orange); padding: 7px 11px; font-size: 11px; color: #5a3a00; border-radius: 0 4px 4px 0; margin-top: 8px; line-height: 1.5; }
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 6px; }
+
+  /* 参考画像 */
+  .ref-input-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 10px; }
+  .ref-input-row input { flex: 1; }
+  .drop-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 22px; text-align: center; color: #999; font-size: 12px; cursor: pointer; transition: all 0.2s; margin-bottom: 14px; }
+  .drop-zone:hover, .drop-zone.dragover { border-color: var(--orange); background: #FFF8EE; color: #666; }
+  .drop-zone .drop-icon { font-size: 28px; display: block; margin-bottom: 5px; }
+  .ref-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 14px; }
+  .ref-item { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: white; position: relative; transition: box-shadow 0.2s; }
+  .ref-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .ref-item.selected { border-color: var(--orange); box-shadow: 0 0 0 2px var(--orange); }
+  .ref-item img { width: 100%; aspect-ratio: 1; object-fit: contain; background: #f9f9f9; display: block; cursor: pointer; }
+  .ref-item-body { padding: 7px; }
+  .ref-item-note { width: 100%; font-size: 11px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 3px; resize: none; min-height: 44px; color: #444; font-family: inherit; }
+  .ref-item-note:focus { outline: none; border-color: var(--blue); }
+  .ref-item-actions { display: flex; gap: 4px; margin-top: 5px; }
+  .ref-item-del { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .ref-item-del:hover { background: #c0392b; }
+  .ref-select-btn { font-size: 10px; padding: 3px 7px; border-radius: 3px; border: 1px solid var(--orange); background: white; color: var(--orange); cursor: pointer; font-weight: 600; }
+  .ref-item.selected .ref-select-btn { background: var(--orange); color: white; }
+  .asin-info { background: #F0F7FF; border: 1px solid #B8D4F0; border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 12px; }
+  .asin-info a { color: var(--blue); text-decoration: none; }
+  .asin-info a:hover { text-decoration: underline; }
+  .selected-refs-bar { background: #FFF3DC; border: 1px solid var(--orange); border-radius: 6px; padding: 8px 12px; font-size: 12px; margin-bottom: 12px; display: none; }
+  .selected-refs-bar.visible { display: block; }
+  .empty-gallery { text-align: center; color: #bbb; padding: 28px; font-size: 12px; }
+  .empty-gallery .empty-icon { font-size: 36px; display: block; margin-bottom: 6px; }
+
+  /* セールスライティング専用 */
+  .fw-selector { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+  .fw-btn { padding: 6px 14px; border-radius: 20px; border: 2px solid var(--border); background: white; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: #555; }
+  .fw-btn:hover { border-color: var(--orange); }
+  .fw-btn.active-aida { border-color: #2D6A2D; background: #D5E8D4; color: #2D6A2D; }
+  .fw-btn.active-pas  { border-color: #A0522D; background: #FFE6CC; color: #A0522D; }
+  .fw-btn.active-fab  { border-color: #1A5276; background: #DAE8FC; color: #1A5276; }
+
+  .pain-gain-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .emo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .emo-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #444; cursor: pointer; padding: 4px 7px; border: 1px solid var(--border); border-radius: 4px; transition: all 0.2s; }
+  .emo-item:hover { border-color: var(--purple); background: #F5EEF8; }
+  .emo-item.checked { border-color: var(--purple); background: #EDE0F8; color: #5B2C6F; font-weight: 600; }
+
+  .carousel-gen-btn { width: 100%; padding: 10px; background: var(--dark); color: white; font-size: 13px; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; margin-top: 8px; transition: background 0.2s; }
+  .carousel-gen-btn:hover { background: #374151; }
+
+  .carousel-results { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+  .carousel-result-item { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .carousel-result-header {
+    background: var(--dark); color: white; padding: 7px 12px;
+    display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
+  }
+  .carousel-result-header .step-num { background: var(--orange); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .carousel-result-body { padding: 10px 12px; position: relative; }
+  .carousel-prompt-text { font-size: 11px; line-height: 1.7; white-space: pre-wrap; color: #333; }
+  .btn-copy-small { position: absolute; top: 8px; right: 8px; padding: 3px 9px; background: var(--blue); color: white; border: none; border-radius: 3px; font-size: 10px; font-weight: 600; cursor: pointer; }
+  .btn-copy-small:hover { background: #0f5a96; }
+  .btn-copy-small.copied { background: var(--success); }
+
+  .fw-explain { font-size: 11px; color: #666; line-height: 1.6; padding: 8px 10px; background: #f9f9f9; border-radius: 5px; margin-bottom: 10px; }
+  .size-preset { padding: 4px 9px; font-size: 10px; font-weight: 600; border: 1px solid var(--border); border-radius: 4px; background: white; color: #555; cursor: pointer; transition: all 0.15s; }
+  .size-preset:hover { border-color: var(--blue); color: var(--blue); background: #EEF7FF; }
+  .fmt-btn { display: flex; flex-direction: column; align-items: center; padding: 6px 12px; border: 2px solid var(--border); border-radius: 6px; background: white; color: #555; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s; line-height: 1.2; min-width: 64px; }
+  .fmt-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .fmt-btn.active { border-color: var(--blue); background: #EEF7FF; color: var(--blue); }
+  .fmt-note { font-size: 9px; font-weight: 400; color: #999; margin-top: 2px; }
+  .fmt-btn.active .fmt-note { color: var(--blue); opacity: 0.8; }
+
+  /* ポジショニング */
+  .pos-btn { width:100%; padding:7px 10px; border:2px solid var(--border); border-radius:6px; background:white; font-size:12px; font-weight:700; cursor:pointer; text-align:left; transition:all 0.15s; color:#444; display:flex; align-items:center; gap:6px; }
+  .pos-btn:hover { border-color: var(--orange); background:#FFF8EE; }
+  .pos-btn.active { border-color: var(--orange); background:#FFF3DC; color:#333; }
+  .pos-sub { font-size:10px; font-weight:400; color:#888; margin-left:auto; }
+  .pos-btn.active .pos-sub { color:#a06000; }
+
+  /* 季節ボタン */
+  .season-btn { padding:5px 10px; border:1px solid var(--border); border-radius:4px; background:white; font-size:11px; font-weight:600; cursor:pointer; color:#666; transition:all 0.15s; }
+  .season-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .season-btn.active { border-color: var(--orange); background: var(--orange); color:white; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Amazon LP 画像プロンプトジェネレーター</div>
+  <div class="subtitle">ChatGPT (DALL-E) 用プロンプトを自動生成 — Amazon 画像規約準拠 × セールスライティング</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active"  onclick="switchTab('generate')">プロンプト生成</div>
+  <div class="tab"         onclick="switchTab('carousel')">カルーセル戦略 7枚</div>
+  <div class="tab"         onclick="switchTab('reference')">参考画像ボード</div>
+  <div class="tab"         onclick="switchTab('strategy')">販売戦略コンサルト</div>
+  <div class="tab"         onclick="switchTab('rules')">Amazon 規約</div>
+</div>
+
+<!-- ===== タブ1: プロンプト生成 ===== -->
+<div id="tab-generate" class="tab-content active">
+<div class="container">
+<div class="grid-2">
+
+  <!-- 商品情報 -->
+  <div class="card">
+    <h2>① 商品情報</h2>
+    <div class="field">
+      <label>商品名<span class="required">*</span></label>
+      <input type="text" id="productName" placeholder="例: ステンレス製タンブラー 500ml">
+    </div>
+    <div class="field">
+      <label>カテゴリ<span class="required">*</span></label>
+      <select id="category">
+        <option value="">-- 選択 --</option>
+        <option value="kitchen">キッチン・食器</option>
+        <option value="electronics">家電・電子機器</option>
+        <option value="fashion">ファッション・アパレル</option>
+        <option value="beauty">美容・コスメ</option>
+        <option value="health">健康・医療</option>
+        <option value="sports">スポーツ・アウトドア</option>
+        <option value="toy">おもちゃ・ゲーム</option>
+        <option value="food">食品・飲料</option>
+        <option value="pet">ペット用品</option>
+        <option value="home">インテリア・家具</option>
+        <option value="tools">工具・DIY</option>
+        <option value="office">文具・オフィス用品</option>
+        <option value="baby">ベビー・マタニティ</option>
+        <option value="other">その他</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>色・素材</label>
+      <input type="text" id="colorMaterial" placeholder="例: シルバー、ステンレス304、マット仕上げ">
+    </div>
+    <div class="field">
+      <label>サイズ・形状</label>
+      <input type="text" id="sizeShape" placeholder="例: 高さ18cm、円筒形、スリムタイプ">
+    </div>
+    <div class="field">
+      <label>商品の特徴（最大3つ）</label>
+      <textarea id="features" placeholder="例:&#10;・真空二重断熱で6時間保温保冷&#10;・蓋付きで持ち運びに便利&#10;・食洗機対応"></textarea>
+    </div>
+  </div>
+
+  <!-- セールスライティング設定 -->
+  <div class="card">
+    <h2>② セールスライティング設定</h2>
+
+    <div class="field">
+      <label>フレームワーク</label>
+      <div class="fw-selector">
+        <button class="fw-btn active-fab" id="fw-fab" onclick="selectFw('fab')">FAB <span style="font-weight:400;font-size:10px;">特徴→優位性→恩恵</span></button>
+        <button class="fw-btn" id="fw-pas"  onclick="selectFw('pas')">PAS <span style="font-weight:400;font-size:10px;">悩み→共感→解決</span></button>
+        <button class="fw-btn" id="fw-aida" onclick="selectFw('aida')">AIDA <span style="font-weight:400;font-size:10px;">注意→関心→欲求→行動</span></button>
+      </div>
+      <div id="fwExplain" class="fw-explain"></div>
+    </div>
+
+    <div class="field">
+      <label>USP（この商品だけの唯一の強み）</label>
+      <div class="hint">競合と比べて「これだけは絶対に負けない」ポイント</div>
+      <input type="text" id="usp" placeholder="例: 業界最長12時間保温・特許取得の二重蓋構造・日本製ステンレス使用">
+    </div>
+
+    <div class="pain-gain-row">
+      <div class="field">
+        <label>ターゲットの悩み・ペインポイント</label>
+        <div class="hint">購入前にどんな不満・不安を抱えているか</div>
+        <textarea id="painPoint" placeholder="例:&#10;・飲み物がすぐ冷める&#10;・持ち運びで漏れる&#10;・洗いにくい"></textarea>
+      </div>
+      <div class="field">
+        <label>購入後の理想の状態（ゴール）</label>
+        <div class="hint">この商品で顧客が得たい未来の姿</div>
+        <textarea id="desiredOutcome" placeholder="例:&#10;・仕事中ずっと適温で飲める&#10;・バッグの中でも安心&#10;・手軽に清潔を保てる"></textarea>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>感情トリガー（複数選択可）</label>
+      <div class="emo-grid" id="emoGrid">
+        <div class="emo-item" onclick="toggleEmo(this)" data-val="安心感・信頼">🛡️ 安心感・信頼</div>
+        <div class="emo-item" onclick="toggleEmo(this)" data-val="ステータス・上質さ">✨ ステータス・上質さ</div>
+        <div class="emo-item" onclick="toggleEmo(this)" data-val="時短・効率">⚡ 時短・効率</div>
+        <div class="emo-item" onclick="toggleEmo(this)" data-val="節約・コスパ">💰 節約・コスパ</div>
+        <div class="emo-item" onclick="toggleEmo(this)" data-val="健康・美しさ">💚 健康・美しさ</div>
+        <div class="emo-item" onclick="toggleEmo(this)" data-val="家族・絆">👨‍👩‍👧 家族・絆</div>
+        <div class="emo-item" onclick="toggleEmo(this)" data-val="冒険・アクティブ">🏔️ 冒険・アクティブ</div>
+        <div class="emo-item" onclick="toggleEmo(this)" data-val="プロ感・専門性">🎯 プロ感・専門性</div>
+      </div>
+    </div>
+
+    <div class="pain-gain-row">
+      <div class="field">
+        <label>ターゲットペルソナ</label>
+        <div style="display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap;">
+          <select id="personaGender" style="flex:1; min-width:80px;">
+            <option value="">性別 問わず</option>
+            <option value="male">男性向け</option>
+            <option value="female">女性向け</option>
+            <option value="unisex">ユニセックス</option>
+          </select>
+          <select id="personaAge" style="flex:1; min-width:90px;">
+            <option value="">年代 問わず</option>
+            <option value="teens">10代</option>
+            <option value="20s">20代</option>
+            <option value="30s">30代</option>
+            <option value="40s">40代</option>
+            <option value="50s">50代以上</option>
+            <option value="kids">子ども向け</option>
+            <option value="family">ファミリー</option>
+          </select>
+        </div>
+        <input type="text" id="scene" placeholder="例: 会社員、在宅ワーク、アウトドア好き">
+      </div>
+      <div class="field">
+        <label>価格帯・ポジショニング</label>
+        <div class="hint">視覚的な高級感・質感の方向性が変わります</div>
+        <div style="display:flex; flex-direction:column; gap:5px;">
+          <button class="pos-btn" data-pos="premium" onclick="setPos(this)">💎 プレミアム <span class="pos-sub">高級感・質感重視・暗め×ゴールド</span></button>
+          <button class="pos-btn active" data-pos="mid" onclick="setPos(this)">⭐ ミドルレンジ <span class="pos-sub">信頼感・清潔感・バランス重視</span></button>
+          <button class="pos-btn" data-pos="budget" onclick="setPos(this)">💡 バジェット <span class="pos-sub">明るく親しみやすい・コスパ訴求</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>季節・シーズン（任意）</label>
+      <div style="display:flex; gap:5px; flex-wrap:wrap;">
+        <button class="season-btn active" data-season="" onclick="setSeason(this)">通年</button>
+        <button class="season-btn" data-season="spring" onclick="setSeason(this)">🌸 春</button>
+        <button class="season-btn" data-season="summer" onclick="setSeason(this)">☀️ 夏</button>
+        <button class="season-btn" data-season="autumn" onclick="setSeason(this)">🍂 秋</button>
+        <button class="season-btn" data-season="winter" onclick="setSeason(this)">❄️ 冬</button>
+        <button class="season-btn" data-season="xmas" onclick="setSeason(this)">🎄 クリスマス</button>
+        <button class="season-btn" data-season="newyear" onclick="setSeason(this)">🎍 正月・ギフト</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 画像タイプ＋スタイル -->
+  <div class="card">
+    <h2>③ 画像タイプ・スタイル</h2>
+
+    <div class="image-type-grid" id="typeGrid">
+      <div class="type-card selected" data-type="main"       onclick="selectType(this)"><span class="icon">🎯</span><div class="name">メイン画像</div><div class="desc">ヒーローショット</div></div>
+      <div class="type-card"         data-type="lifestyle"   onclick="selectType(this)"><span class="icon">🌿</span><div class="name">ライフスタイル</div><div class="desc">理想の状態を見せる</div></div>
+      <div class="type-card"         data-type="benefit"     onclick="selectType(this)"><span class="icon">⭐</span><div class="name">ベネフィット訴求</div><div class="desc">顧客への恩恵を視覚化</div></div>
+      <div class="type-card"         data-type="detail"      onclick="selectType(this)"><span class="icon">🔍</span><div class="name">品質・詳細</div><div class="desc">信頼・安心感を構築</div></div>
+      <div class="type-card"         data-type="size"        onclick="selectType(this)"><span class="icon">📐</span><div class="name">サイズ比較</div><div class="desc">購入不安を払拭</div></div>
+      <div class="type-card"         data-type="usecase"     onclick="selectType(this)"><span class="icon">✋</span><div class="name">使用方法</div><div class="desc">使いやすさで背中を押す</div></div>
+      <div class="type-card"         data-type="beforeafter" onclick="selectType(this)"><span class="icon">🔀</span><div class="name">Before/After</div><div class="desc">変化・効果で欲求を刺激</div></div>
+    </div>
+
+    <div class="field" style="margin-top:12px;">
+      <label>雰囲気・スタイル</label>
+      <select id="style">
+        <option value="clean">クリーン・ミニマル（白・グレー系）</option>
+        <option value="natural">ナチュラル（木目・グリーン系）</option>
+        <option value="luxury">高級感（黒・ゴールド系）</option>
+        <option value="energetic">アクティブ・爽やか（青・白系）</option>
+        <option value="warm">温かみ・家族向け（ベージュ・暖色系）</option>
+        <option value="professional">プロフェッショナル・ビジネス</option>
+        <option value="playful">ポップ・カラフル</option>
+      </select>
+    </div>
+
+    <div id="selectedRefsBar" class="selected-refs-bar">参考画像 <strong id="selectedRefsCount">0</strong> 枚のメモをプロンプトに反映中</div>
+
+    <div class="field">
+      <label>出力画像サイズ（ピクセル）</label>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:4px;">
+          <span style="font-size:11px; color:#666;">横</span>
+          <input type="number" id="imgWidth" value="2000" min="500" max="4096" step="100"
+            style="width:80px; text-align:center; font-size:12px; padding:6px 8px;">
+          <span style="font-size:11px; color:#666;">px</span>
+        </div>
+        <span style="font-size:13px; color:#aaa;">×</span>
+        <div style="display:flex; align-items:center; gap:4px;">
+          <span style="font-size:11px; color:#666;">縦</span>
+          <input type="number" id="imgHeight" value="2000" min="500" max="4096" step="100"
+            style="width:80px; text-align:center; font-size:12px; padding:6px 8px;">
+          <span style="font-size:11px; color:#666;">px</span>
+        </div>
+        <div style="display:flex; gap:4px; flex-wrap:wrap;">
+          <button onclick="setSize(2000,2000)" class="size-preset">2000×2000</button>
+          <button onclick="setSize(1500,2000)" class="size-preset">1500×2000</button>
+          <button onclick="setSize(2000,1500)" class="size-preset">2000×1500</button>
+          <button onclick="setSize(1080,1080)" class="size-preset">1080×1080</button>
+        </div>
+      </div>
+      <div style="font-size:10px; color:#888; margin-top:4px;">Amazon推奨: 1000px以上（ズーム機能には2000px以上）</div>
+    </div>
+
+    <div class="field">
+      <label>ファイル形式</label>
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button class="fmt-btn active" data-fmt="JPEG" onclick="setFormat(this)">JPEG<span class="fmt-note">推奨・汎用</span></button>
+        <button class="fmt-btn" data-fmt="PNG" onclick="setFormat(this)">PNG<span class="fmt-note">透過・高品質</span></button>
+        <button class="fmt-btn" data-fmt="WebP" onclick="setFormat(this)">WebP<span class="fmt-note">次世代・軽量</span></button>
+        <button class="fmt-btn" data-fmt="TIFF" onclick="setFormat(this)">TIFF<span class="fmt-note">印刷・無劣化</span></button>
+      </div>
+      <div style="font-size:10px; color:#888; margin-top:4px;" id="fmtNote">Amazon対応: JPEG / PNG / TIFF / GIF（推奨はJPEG）</div>
+    </div>
+
+    <div class="field">
+      <label>プロンプト言語</label>
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="btnJa" onclick="setLang('ja')">日本語</button>
+        <button class="lang-btn" id="btnEn" onclick="setLang('en')">English (推奨)</button>
+      </div>
+    </div>
+    <div class="var-count-row" style="margin-top:10px;">
+      <label>生成する候補数:</label>
+      <button class="var-count-btn" data-n="3" onclick="setVarCount(3)">3案</button>
+      <button class="var-count-btn active" data-n="4" onclick="setVarCount(4)">4案</button>
+      <button class="var-count-btn" data-n="5" onclick="setVarCount(5)">5案</button>
+    </div>
+    <button class="btn-primary" onclick="generateVariations()">候補を生成する →</button>
+  </div>
+
+</div><!-- /grid-2 -->
+
+<!-- 出力: バリエーション (full width) -->
+<div id="variationsSection" style="margin-top:18px; display:none;">
+
+  <!-- 掛け合わせバー -->
+  <div class="combine-bar" id="combineBar">
+    <div class="combine-bar-top">
+      <span class="cb-label">✨ 選択中の案を掛け合わせる</span>
+      <button class="btn-combine" onclick="combineSelected()">この要素を組み合わせてプロンプトを生成 →</button>
+      <button class="btn-clear-sel" onclick="clearSelection()">選択解除</button>
+    </div>
+    <div class="combine-selected-tags" id="combineSelectedTags"></div>
+    <div class="combine-what" id="combineWhat"></div>
+  </div>
+
+  <!-- バリエーションカードグリッド -->
+  <div class="variations-grid" id="variationsGrid"></div>
+
+  <!-- 規約チェック -->
+  <div id="complianceNotes" style="margin-top:6px; display:none;">
+    <div class="card" style="padding:14px;">
+      <div class="section-label">規約チェックポイント</div>
+      <ul class="rules-list" id="rulesList"></ul>
+    </div>
+  </div>
+
+  <!-- 掛け合わせ結果 -->
+  <div class="combine-result" id="combineResult" style="display:none;">
+    <div class="combine-result-header">🔀 掛け合わせ結果</div>
+    <div class="combine-result-body">
+      <div class="combine-prompt-text" id="combineResultText"></div>
+      <button class="combine-copy-btn" id="combineCopyBtn" onclick="copyCombineResult()">コピー</button>
+    </div>
+  </div>
+
+</div>
+
+<div id="variationsEmpty" style="margin-top:18px;">
+  <div class="empty-variations">
+    <span class="ev-icon">✏️</span>
+    左の設定を入力して「候補を生成する」を押すと、<br>
+    <strong>3〜5種類のプロンプト候補</strong>が生成されます。<br>
+    気に入ったものを選ぶか、複数選んで<strong>掛け合わせ</strong>ができます。
+  </div>
+</div>
+
+</div><!-- /container -->
+</div><!-- /tab-generate -->
+
+<!-- ===== タブ2: カルーセル戦略 7枚 ===== -->
+<div id="tab-carousel" class="tab-content">
+<div class="container">
+
+  <div class="card" style="margin-bottom:18px;">
+    <h2>🛒 カルーセル戦略 — 7枚で購買ストーリーを設計する</h2>
+    <div class="tip-orange" style="margin-bottom:14px;">
+      <strong>AIDA × セールスライティング:</strong> Amazon の商品カルーセルは「7枚の連続ストーリー」です。
+      1枚目でクリックさせ（Attention）、2〜4枚目で欲しいと思わせ（Interest/Desire）、最後に購入に踏み切らせます（Action）。
+    </div>
+
+    <div class="carousel-track" id="carouselTrack">
+      <div class="carousel-step active" data-step="1" onclick="selectStep(this)">
+        <div class="cs-num">画像1</div><div class="cs-icon">🎯</div>
+        <div class="cs-name">ヒーローショット</div><div class="cs-frame">Attention</div>
+      </div>
+      <div class="carousel-step" data-step="2" onclick="selectStep(this)">
+        <div class="cs-num">画像2</div><div class="cs-icon">💥</div>
+        <div class="cs-name">ペイン共感</div><div class="cs-frame">Problem</div>
+      </div>
+      <div class="carousel-step" data-step="3" onclick="selectStep(this)">
+        <div class="cs-num">画像3</div><div class="cs-icon">⭐</div>
+        <div class="cs-name">主要ベネフィット</div><div class="cs-frame">Interest</div>
+      </div>
+      <div class="carousel-step" data-step="4" onclick="selectStep(this)">
+        <div class="cs-num">画像4</div><div class="cs-icon">🌿</div>
+        <div class="cs-name">ライフスタイル</div><div class="cs-frame">Desire</div>
+      </div>
+      <div class="carousel-step" data-step="5" onclick="selectStep(this)">
+        <div class="cs-num">画像5</div><div class="cs-icon">🔍</div>
+        <div class="cs-name">品質・信頼証明</div><div class="cs-frame">Trust</div>
+      </div>
+      <div class="carousel-step" data-step="6" onclick="selectStep(this)">
+        <div class="cs-num">画像6</div><div class="cs-icon">📐</div>
+        <div class="cs-name">スペック・比較</div><div class="cs-frame">Confidence</div>
+      </div>
+      <div class="carousel-step" data-step="7" onclick="selectStep(this)">
+        <div class="cs-num">画像7</div><div class="cs-icon">🏁</div>
+        <div class="cs-name">総まとめ</div><div class="cs-frame">Action</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <div class="tip">💡 「商品名・ペインポイント・ゴール」をプロンプト生成タブで入力してから、下のボタンで全7枚を一括生成できます。</div>
+    </div>
+    <button class="carousel-gen-btn" onclick="generateAllCarousel()">全7枚のプロンプトを一括生成 →</button>
+  </div>
+
+  <div id="carouselResults" class="carousel-results"></div>
+
+</div>
+</div>
+
+<!-- ===== タブ3: 参考画像ボード ===== -->
+<div id="tab-reference" class="tab-content">
+<div class="container">
+<div class="grid-2" style="margin-bottom:18px;">
+
+  <div class="card">
+    <h2>Amazon 商品URLから追加</h2>
+    <p style="font-size:12px; color:#666; margin-bottom:10px;">URLを貼り付けてASINを抽出し、商品ページへのリンクを生成します。</p>
+    <div class="field">
+      <label>Amazon 商品URL（日本・米国対応）</label>
+      <div class="ref-input-row">
+        <input type="text" id="asinUrl" placeholder="https://www.amazon.co.jp/dp/B08XXXXXX">
+        <button class="btn-sm btn-blue" onclick="parseAmazonUrl()">解析</button>
+      </div>
+    </div>
+    <div id="asinResult"></div>
+    <hr style="border:none; border-top:1px solid var(--border); margin:12px 0;">
+    <div class="field">
+      <label>画像URLを直接追加</label>
+      <div class="ref-input-row">
+        <input type="text" id="imgUrl" placeholder="https://m.media-amazon.com/images/I/...">
+        <button class="btn-sm btn-blue" onclick="addImageByUrl()">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>画像ファイルをアップロード</h2>
+    <p style="font-size:12px; color:#666; margin-bottom:10px;">Amazonから保存した画像や参考画像をアップロードします。</p>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <span class="drop-icon">🖼️</span>
+      ここに画像をドロップ<br>またはクリックしてファイルを選択<br>
+      <small style="color:#bbb;">JPG / PNG / WebP 対応</small>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" multiple style="display:none;" onchange="handleFileUpload(event)">
+    <div class="tip">💡 Amazon商品ページで画像を右クリック →「名前を付けて画像を保存」してからアップロード</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>参考画像ボード</h2>
+  <p style="font-size:12px; color:#666; margin-bottom:12px;">
+    「参考に使う」を選択するとプロンプトに反映されます。<strong>メモ欄に気に入った点を記入</strong>すると、そのスタイルが自動でプロンプトに組み込まれます。
+  </p>
+  <div id="refGallery" class="ref-gallery">
+    <div class="empty-gallery">
+      <span class="empty-icon">📷</span>まだ画像がありません。<br>上のフォームから追加してください。
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ===== タブ4: 販売戦略コンサルト ===== -->
+<div id="tab-strategy" class="tab-content">
+<div class="container">
+
+  <!-- 使い方フロー -->
+  <div class="chatgpt-tip">
+    <strong>💡 使い方：</strong>
+    このタブで情報を入力 → プロンプトを生成 → ChatGPT（GPT-4o / ブラウジングON）に貼り付け＋商品画像を添付 → 販売戦略・競合分析・画像制作計画を受け取る
+  </div>
+
+  <div class="flow-steps">
+    <div class="flow-step"><span class="fs-icon">🖼️</span><div class="fs-label">商品画像をアップ</div><div class="fs-sub">自社商品の写真</div></div>
+    <div class="flow-step"><span class="fs-icon">📝</span><div class="fs-label">使い方を記入</div><div class="fs-sub">商品説明・特徴</div></div>
+    <div class="flow-step"><span class="fs-icon">🔗</span><div class="fs-label">競合URLを入力</div><div class="fs-sub">類似商品のURL</div></div>
+    <div class="flow-step"><span class="fs-icon">⭐</span><div class="fs-label">レビューを貼付</div><div class="fs-sub">任意・精度UP</div></div>
+    <div class="flow-step"><span class="fs-icon">✨</span><div class="fs-label">プロンプト生成</div><div class="fs-sub">ChatGPTへ</div></div>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- A: 自社商品情報 -->
+    <div class="card strategy-section">
+      <div class="step-header">
+        <div class="step-num-badge">A</div>
+        <div class="step-title">自社商品情報</div>
+        <div class="step-sub">画像はChatGPTに直接添付してください</div>
+      </div>
+
+      <div class="field">
+        <label>商品画像をアップロード（複数可）</label>
+        <div class="product-upload-area" onclick="document.getElementById('strategyFileInput').click()" id="strategyDropZone">
+          <span style="font-size:28px; display:block; margin-bottom:6px;">📸</span>
+          商品写真をドロップ、またはクリックして選択<br>
+          <small style="color:#bbb;">JPG / PNG / WebP — ここに表示してChatGPTに添付</small>
+        </div>
+        <input type="file" id="strategyFileInput" accept="image/*" multiple style="display:none;" onchange="handleStrategyImages(event)">
+        <div class="product-preview-grid" id="strategyPreviewGrid"></div>
+      </div>
+
+      <div class="field">
+        <label>商品名・型番</label>
+        <input type="text" id="strategyProductName" placeholder="例: ステンレスタンブラー 500ml シルバー">
+      </div>
+
+      <div class="field">
+        <label>商品の使い方・特徴の説明<span class="required">*</span></label>
+        <div class="hint">どんな人が・どんな場面で・どう使うか。競合と違う点も記入</div>
+        <textarea id="strategyUsage" style="min-height:100px;"
+          placeholder="例:&#10;・保温6時間・保冷8時間の真空二重断熱タンブラー&#10;・朝コーヒーを入れて通勤、オフィスでも使える&#10;・蓋が片手で開くワンタッチ設計（競合は両手必要）&#10;・食洗機対応で洗いやすい"></textarea>
+      </div>
+
+      <div class="field">
+        <label>販売価格帯</label>
+        <input type="text" id="strategyPrice" placeholder="例: 2,980円（競合は1,500〜4,000円帯）">
+      </div>
+
+      <div class="field">
+        <label>現在の課題・悩み（任意）</label>
+        <textarea id="strategyChallenges" style="min-height:60px;"
+          placeholder="例:&#10;・販売開始したばかりでレビューがない&#10;・競合が多くて差別化が難しい&#10;・どの画像を作れば良いか分からない"></textarea>
+      </div>
+    </div>
+
+    <!-- B: 競合・レビュー情報 -->
+    <div class="card strategy-section">
+      <div class="step-header">
+        <div class="step-num-badge">B</div>
+        <div class="step-title">競合・類似商品の情報</div>
+        <div class="step-sub">URLはChatGPTがブラウジングで確認します</div>
+      </div>
+
+      <div class="field">
+        <label>競合商品のURL（最大5件）</label>
+        <div class="hint">Amazon 商品ページURL — ChatGPTがレビューも含めて分析します</div>
+        <div id="competitorList">
+          <div class="competitor-row">
+            <input type="text" class="competitor-url" placeholder="https://www.amazon.co.jp/dp/XXXXXXXXXX">
+            <button class="btn-sm btn-gray" onclick="removeCompetitor(this)" style="background:#f5f5f5; border:1px solid #ddd; color:#999;">✕</button>
+          </div>
+        </div>
+        <button class="btn-add-competitor" onclick="addCompetitor()">＋ 競合URLを追加</button>
+      </div>
+
+      <div class="field">
+        <label>気になるレビューを貼り付け（任意）</label>
+        <div class="hint">URLからChatGPTが読めない場合や、特定のレビューを強調したい場合に記入</div>
+        <div class="review-grid">
+          <div class="review-box positive">
+            <div class="review-box-header">⭐ 高評価レビュー（★4〜5）</div>
+            <textarea id="reviewPositive" placeholder="例:&#10;「毎朝これがないと始まらない。保温力が他と全然違う」&#10;「蓋が片手で開くのが本当に便利」"></textarea>
+          </div>
+          <div class="review-box negative">
+            <div class="review-box-header">😤 低評価レビュー（★1〜2）</div>
+            <textarea id="reviewNegative" placeholder="例:&#10;「3ヶ月で塗装が剥げた」&#10;「蓋が固くて子供が開けられない」&#10;「洗いにくい形状」"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>分析してほしいこと（任意）</label>
+        <textarea id="strategyFocus" style="min-height:60px;"
+          placeholder="例:&#10;・競合より安い価格で差別化できるか&#10;・どのターゲット層に絞るべきか&#10;・どの訴求ポイントを画像で前面に出すべきか"></textarea>
+      </div>
+    </div>
+
+  </div><!-- /grid-2 -->
+
+  <!-- 生成ボタン -->
+  <button class="btn-gen-strategy" onclick="generateStrategyPrompts()">
+    🧠 販売戦略・画像制作計画を生成する →
+  </button>
+
+  <!-- 出力エリア -->
+  <div id="strategyOutputArea" style="display:none;">
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div class="strategy-output-tabs" id="strategyOutputTabs">
+        <div class="s-tab active" onclick="switchStrategyTab(0)">📊 販売戦略</div>
+        <div class="s-tab" onclick="switchStrategyTab(1)">🔍 競合分析</div>
+        <div class="s-tab" onclick="switchStrategyTab(2)">🖼️ 画像制作計画 7枚</div>
+      </div>
+      <div class="strategy-output-panel active" id="sPanel0">
+        <div class="strategy-prompt-text strategy-empty" id="sText0">生成ボタンを押してください</div>
+        <button class="btn-copy" id="sCopy0" onclick="copyStrategyPrompt(0)" style="display:none; position:absolute; top:10px; right:10px;">コピー</button>
+      </div>
+      <div class="strategy-output-panel" id="sPanel1">
+        <div class="strategy-prompt-text strategy-empty" id="sText1">生成ボタンを押してください</div>
+        <button class="btn-copy" id="sCopy1" onclick="copyStrategyPrompt(1)" style="display:none; position:absolute; top:10px; right:10px;">コピー</button>
+      </div>
+      <div class="strategy-output-panel" id="sPanel2">
+        <div class="strategy-prompt-text strategy-empty" id="sText2">生成ボタンを押してください</div>
+        <button class="btn-copy" id="sCopy2" onclick="copyStrategyPrompt(2)" style="display:none; position:absolute; top:10px; right:10px;">コピー</button>
+      </div>
+    </div>
+
+    <div class="tip" style="margin-top:12px;">
+      💡 <strong>ChatGPT での使い方:</strong>
+      上のプロンプトをコピー → ChatGPT の新しい会話に貼り付け → 商品画像ファイルも一緒に添付 → 送信
+      （GPT-4o + ブラウジングON 推奨）
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ===== タブ5: 規約 ===== -->
+<div id="tab-rules" class="tab-content">
+<div class="container">
+<div class="grid-3">
+  <div class="card">
+    <h2>メイン画像 — 必須要件</h2>
+    <ul class="rules-list">
+      <li>背景は純白（RGB 255,255,255）</li>
+      <li>商品がフレームの85%以上を占める</li>
+      <li>実際の商品を正確に表現する</li>
+      <li>最小1000×1000px（推奨2000×2000px）</li>
+      <li>JPEG / PNG / TIFF / GIF 形式</li>
+      <li>sRGB または CMYK カラーモード</li>
+      <li class="ng">テキスト・ロゴ・透かしの追加</li>
+      <li class="ng">白以外の背景・グラデーション</li>
+      <li class="ng">商品以外の小道具・飾り</li>
+      <li class="ng">パッケージのみで商品不可視</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>サブ画像 — 推奨・禁止</h2>
+    <ul class="rules-list">
+      <li>ライフスタイル・使用シーン OK</li>
+      <li>商品特徴を説明するテキスト OK</li>
+      <li>複数角度・詳細アップ OK</li>
+      <li>インフォグラフィック・比較表 OK</li>
+      <li>モデル・人物の使用 OK</li>
+      <li class="ng">「送料無料」「セール」等の販促文字</li>
+      <li class="ng">Amazon ロゴ・バッジの使用</li>
+      <li class="ng">在庫切れ・注文不可の表示</li>
+      <li class="ng">不鮮明・ぼやけた画像</li>
+      <li class="ng">成人向け露出・不適切コンテンツ</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>技術仕様</h2>
+    <ul class="rules-list">
+      <li>推奨サイズ: 2000×2000px（正方形）</li>
+      <li>最小サイズ: 1000×1000px</li>
+      <li>最大ファイルサイズ: 10MB</li>
+      <li>推奨フォーマット: JPEG (.jpg)</li>
+      <li>カラーモード: sRGB</li>
+      <li>カルーセル最大: 9枚（メイン1+サブ8）</li>
+      <li class="ng">アニメーションGIF（動く画像）</li>
+      <li class="ng">解像度500px未満の低品質画像</li>
+    </ul>
+    <div class="tip" style="margin-top:10px;">
+      💡 DALL-E 生成画像はデフォルト1024×1024px。Amazon使用は問題ありませんが、ズーム機能には2000px以上推奨。
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+// ===== タブ =====
+function switchTab(name) {
+  const names = ['generate','carousel','reference','strategy','rules'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i]===name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name==='generate') updateSelectedRefsBar();
+}
+
+// ===== フレームワーク =====
+let selectedFw = 'fab';
+const fwExplains = {
+  fab:  '【FAB】Feature（機能）→ Advantage（優位性）→ Benefit（顧客への恩恵）の順で伝える。「6時間保温（機能）→ 保温ボトル業界最高クラス（優位性）→ 午後もホットコーヒーが飲める（恩恵）」のように、最終的に顧客がどう嬉しいかを画像で視覚化します。',
+  pas:  '【PAS】Problem（問題提起）→ Agitate（問題を掘り下げる）→ Solution（解決策を提示）。「冷めたコーヒーを飲む不満」→「集中力や仕事のパフォーマンスへの影響」→「この商品が解決！」という感情的なストーリーを画像で表現します。',
+  aida: '【AIDA】Attention（注目）→ Interest（興味）→ Desire（欲求）→ Action（行動）。7枚のカルーセルをこの流れで設計し、1枚目で目を引き、最後の1枚で購入に踏み切らせます。',
+};
+function selectFw(fw) {
+  selectedFw = fw;
+  ['fab','pas','aida'].forEach(f => {
+    const btn = document.getElementById('fw-'+f);
+    btn.className = 'fw-btn' + (f===fw ? ' active-'+f : '');
+  });
+  document.getElementById('fwExplain').textContent = fwExplains[fw];
+}
+selectFw('fab');
+
+// ===== 感情トリガー =====
+function toggleEmo(el) { el.classList.toggle('checked'); }
+function getSelectedEmos() {
+  return Array.from(document.querySelectorAll('.emo-item.checked')).map(e => e.dataset.val);
+}
+
+// ===== 画像タイプ =====
+let selectedType = 'main';
+function selectType(el) {
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedType = el.dataset.type;
+}
+
+// ===== ポジショニング =====
+let selectedPos = 'mid';
+const posDataJa = {
+  premium: { light:'ドラマチックで洗練された照明、深みのある暗背景、ゴールド・シルバーアクセント、素材の質感を最大限に引き出す', color:'ディープチャコール・ブラック・シャンパンゴールド', note:'高級感・希少性・所有欲を刺激' },
+  mid:     { light:'清潔感のある明るいスタジオ照明、ホワイト〜ライトグレー背景、バランスのよい自然な色調',               color:'ホワイト・ライトグレー・アクセントカラー1色',    note:'信頼感・安心感・幅広い層への訴求' },
+  budget:  { light:'明るく親しみやすい照明、鮮やかな色味、ポップで手に取りやすい雰囲気',                               color:'明るいホワイト・鮮やかなアクセントカラー',         note:'手頃感・わかりやすさ・即買いを促す' },
+};
+const posDataEn = {
+  premium: { light:'dramatic refined lighting, deep dark background, gold/silver accents, texture emphasis', color:'deep charcoal, black, champagne gold', note:'luxury, scarcity, desire to own' },
+  mid:     { light:'clean bright studio lighting, white to light gray background, balanced natural tones',   color:'white, light gray, one accent color',  note:'trust, reliability, broad appeal' },
+  budget:  { light:'bright friendly lighting, vivid colors, pop approachable feel',                          color:'bright white, vivid accent color',      note:'affordability, clarity, impulse buy' },
+};
+function setPos(btn) {
+  selectedPos = btn.dataset.pos;
+  document.querySelectorAll('.pos-btn').forEach(b => b.classList.toggle('active', b === btn));
+}
+function getPosData(lang) { return lang === 'en' ? posDataEn[selectedPos] : posDataJa[selectedPos]; }
+
+// ===== 季節 =====
+let selectedSeason = '';
+const seasonDataJa = {
+  '':        { desc:'', color:'' },
+  spring:    { desc:'春の柔らかい自然光、桜ピンクや新緑グリーンのアクセント、清々しく明るい雰囲気', color:'桜ピンク・新緑グリーン・クリームホワイト' },
+  summer:    { desc:'夏の強い日差しと鮮やかな色彩、清涼感・躍動感・爽快さを表現',                    color:'スカイブルー・クリアホワイト・サンシャインイエロー' },
+  autumn:    { desc:'秋の温かみのある光、深みのあるオレンジ・バーガンディ・ブラウンのアクセント',     color:'テラコッタ・バーガンディ・ウォームブラウン' },
+  winter:    { desc:'冬の澄んだ光、落ち着いたクールトーン、清潔感と温もりのコントラスト',             color:'クールホワイト・アイスブルー・ウォームグレー' },
+  xmas:      { desc:'クリスマスの特別感・贈り物としての高揚感、深みのある赤×ゴールド×グリーン',       color:'ディープレッド・ゴールド・エバーグリーン' },
+  newyear:   { desc:'正月・ギフトシーズンの特別感、格式・お祝いムード、和の品格または豪華さ',          color:'紅白・金・和の渋色または豪華なゴールド' },
+};
+const seasonDataEn = {
+  '':        { desc:'', color:'' },
+  spring:    { desc:'soft spring natural light, cherry blossom pink and fresh green accents, bright and refreshing',   color:'sakura pink, fresh green, cream white' },
+  summer:    { desc:'strong summer sunlight, vibrant colors, cool refreshing energy, dynamic vibrancy',                color:'sky blue, clear white, sunshine yellow' },
+  autumn:    { desc:'warm autumn light, deep orange, burgundy and brown accents, cozy richness',                       color:'terracotta, burgundy, warm brown' },
+  winter:    { desc:'crisp winter light, cool tones, clean and cozy contrast',                                         color:'cool white, ice blue, warm gray' },
+  xmas:      { desc:'Christmas special warmth, gift-giving excitement, deep red and gold festive palette',             color:'deep red, gold, evergreen' },
+  newyear:   { desc:'New Year gift season premium feel, celebratory and prestigious atmosphere',                       color:'red and white, gold, premium tones' },
+};
+function setSeason(btn) {
+  selectedSeason = btn.dataset.season;
+  document.querySelectorAll('.season-btn').forEach(b => b.classList.toggle('active', b === btn));
+}
+function getSeasonData(lang) { return lang === 'en' ? seasonDataEn[selectedSeason] : seasonDataJa[selectedSeason]; }
+
+// ===== 色彩心理学マッピング =====
+const colorPsychJa = {
+  '安心感・信頼':   'ネイビーブルー・クリーンホワイト・ソフトグレー（信頼と安心を象徴する色調）',
+  'ステータス・上質さ': 'ディープブラック・シャンパンゴールド・プラチナシルバー（高級と希少性を表現）',
+  '時短・効率':     'クリーンホワイト・テクノブルー・メタリックグレー（スマートさと機能美）',
+  '節約・コスパ':   'フレッシュグリーン・ブライトオレンジ・クリーンホワイト（明るく親しみやすい）',
+  '健康・美しさ':   'ナチュラルグリーン・ソフトピンク・ピュアホワイト（生命感と清潔感）',
+  '家族・絆':       'ウォームベージュ・ソフトイエロー・アーシーブラウン（温かさと親しみ）',
+  '冒険・アクティブ': 'エナジーレッド・サンシャインオレンジ・ダイナミックブルー（躍動感とエネルギー）',
+  'プロ感・専門性': 'チャコールグレー・ミッドナイトブルー・クリーンホワイト（権威と信頼性）',
+};
+const colorPsychEn = {
+  '安心感・信頼':   'navy blue, clean white, soft gray (evoking trust and reliability)',
+  'ステータス・上質さ': 'deep black, champagne gold, platinum silver (communicating luxury and exclusivity)',
+  '時短・効率':     'clean white, tech blue, metallic gray (smart functionality aesthetic)',
+  '節約・コスパ':   'fresh green, bright orange, clean white (approachable and friendly)',
+  '健康・美しさ':   'natural green, soft pink, pure white (vitality and cleanliness)',
+  '家族・絆':       'warm beige, soft yellow, earthy brown (warmth and familiarity)',
+  '冒険・アクティブ': 'energy red, sunshine orange, dynamic blue (momentum and energy)',
+  'プロ感・専門性': 'charcoal gray, midnight blue, clean white (authority and expertise)',
+};
+function getColorPalette(emos, lang) {
+  if (!emos.length) return '';
+  const map = lang === 'en' ? colorPsychEn : colorPsychJa;
+  const colors = emos.map(e => map[e]).filter(Boolean);
+  if (!colors.length) return '';
+  return lang === 'en'
+    ? `Color psychology palette: ${colors.join('; ')}.`
+    : `色彩心理学パレット: ${colors.join('。')}.`;
+}
+
+// ===== ペルソナ取得 =====
+function getPersonaText(lang) {
+  const gender = document.getElementById('personaGender').value;
+  const age    = document.getElementById('personaAge').value;
+  const gMap = { male:'男性', female:'女性', unisex:'ユニセックス' };
+  const aMap = { teens:'10代', '20s':'20代', '30s':'30代', '40s':'40代', '50s':'50代以上', kids:'子ども', family:'ファミリー' };
+  const gMapEn = { male:'male', female:'female', unisex:'unisex / gender-neutral' };
+  const aMapEn = { teens:'teens', '20s':'20s', '30s':'30s', '40s':'40s', '50s':'50s+', kids:'children', family:'families' };
+  const parts = lang === 'en'
+    ? [gMapEn[gender], aMapEn[age]].filter(Boolean)
+    : [gMap[gender], aMap[age]].filter(Boolean);
+  return parts.length ? (lang === 'en' ? `Target: ${parts.join(', ')}.` : `ターゲット: ${parts.join('・')}.`) : '';
+}
+
+// ===== ファイル形式 =====
+let selectedFormat = 'JPEG';
+const fmtNotes = {
+  JPEG: 'Amazon対応: JPEG / PNG / TIFF / GIF（推奨はJPEG）',
+  PNG:  '透過背景が必要な場合に最適。ファイルサイズは大きめ。Amazon対応。',
+  WebP: '軽量・高品質。Amazon商品ページには未対応のため、提出前にJPEG変換を推奨。',
+  TIFF: '無劣化・印刷用途向け。Amazon対応。ファイルサイズが非常に大きい。',
+};
+function setFormat(btn) {
+  selectedFormat = btn.dataset.fmt;
+  document.querySelectorAll('.fmt-btn').forEach(b => b.classList.toggle('active', b === btn));
+  document.getElementById('fmtNote').textContent = fmtNotes[selectedFormat] || '';
+}
+function getFormat() { return selectedFormat; }
+
+// ===== 画像サイズ =====
+function setSize(w, h) {
+  document.getElementById('imgWidth').value = w;
+  document.getElementById('imgHeight').value = h;
+}
+function getSizeText(lang) {
+  const w = parseInt(document.getElementById('imgWidth').value) || 2000;
+  const h = parseInt(document.getElementById('imgHeight').value) || 2000;
+  const ratio = w === h ? '1:1（正方形）' : w > h ? '横長' : '縦長';
+  const ratioEn = w === h ? '1:1 square' : w > h ? 'landscape' : 'portrait';
+  return lang === 'en' ? `${w}×${h}px (${ratioEn})` : `${w}×${h}px（${ratio}）`;
+}
+
+// ===== 言語 =====
+let selectedLang = 'ja';
+function setLang(lang) {
+  selectedLang = lang;
+  document.getElementById('btnJa').classList.toggle('active', lang==='ja');
+  document.getElementById('btnEn').classList.toggle('active', lang==='en');
+}
+
+// ===== 参考画像 =====
+let refImages = [];
+function updateSelectedRefsBar() {
+  const n = refImages.filter(r=>r.selected).length;
+  const bar = document.getElementById('selectedRefsBar');
+  document.getElementById('selectedRefsCount').textContent = n;
+  bar.classList.toggle('visible', n>0);
+}
+
+// ===== カルーセルステップ選択 =====
+let selectedStep = 1;
+function selectStep(el) {
+  document.querySelectorAll('.carousel-step').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  selectedStep = parseInt(el.dataset.step);
+}
+
+// ===== バリエーション候補数 =====
+let varCount = 4;
+function setVarCount(n) {
+  varCount = n;
+  document.querySelectorAll('.var-count-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.n) === n));
+}
+
+// ===== レンズ定義（5種類）=====
+const lenses = [
+  {
+    id: 'cinematic', icon: '🎬', name: 'シネマ', tag: 'tag-cinematic', tagLabel: 'ドラマチック',
+    descJa: 'ドラマチックな照明・深い影・映画的構図。高コントラストで圧倒的な存在感。',
+    descEn: 'Cinematic dramatic lighting, deep shadows, high contrast, film-like composition. Overwhelming visual presence.',
+    modJa: (base) => base + '\n撮影スタイル: シネマティックなドラマチック照明。スポットライト的な光源、深い陰影、フィルムグレイン感。商品が舞台の主役のような存在感。',
+    modEn: (base) => base + '\nPhotography style: Cinematic dramatic lighting. Spotlight-like light source, deep chiaroscuro shadows, subtle film grain texture. Product feels like the star of a stage.',
+  },
+  {
+    id: 'minimal', icon: '✨', name: 'ミニマル', tag: 'tag-minimal', tagLabel: 'エディトリアル',
+    descJa: '究極のクリーンさ・余白・雑誌的な高級感。シンプルで洗練された構図。',
+    descEn: 'Ultra-clean editorial aesthetic, ample white space, luxury magazine feel. Simple, refined, sophisticated.',
+    modJa: (base) => base + '\n撮影スタイル: 究極のミニマリズム。大胆な余白、完璧な対称構図、フラットレイまたはサイドビュー、トップビュー。まるでLUXURY雑誌のビジュアルのような洗練。',
+    modEn: (base) => base + '\nPhotography style: Ultimate minimalism. Bold negative space, perfect symmetry, flat lay or pure side/top view. Refined like a luxury fashion magazine visual.',
+  },
+  {
+    id: 'natural', icon: '🌿', name: 'ナチュラル', tag: 'tag-natural', tagLabel: 'オーガニック',
+    descJa: '柔らかい自然光・有機的なテクスチャ・温かく本物らしい雰囲気。',
+    descEn: 'Soft natural window light, organic textures, warm authentic feel. Real and approachable.',
+    modJa: (base) => base + '\n撮影スタイル: 窓からの柔らかい自然光。リネン・木・植物・石などの有機的な小物（メイン画像はNG）。温かく本物らしいテクスチャ。オーガニックで信頼感のある雰囲気。',
+    modEn: (base) => base + '\nPhotography style: Soft natural window light. Organic textures — linen, wood, plants, stone as environment (not as props for main image). Warm, authentic, trustworthy organic atmosphere.',
+  },
+  {
+    id: 'dramatic', icon: '🔥', name: 'ダイナミック', tag: 'tag-dramatic', tagLabel: 'インパクト',
+    descJa: '大胆な色彩・強いグラフィックインパクト・視覚的に止まらないエネルギー。',
+    descEn: 'Bold colors, strong graphic impact, unstoppable visual energy. Grabs attention immediately.',
+    modJa: (base) => base + '\n撮影スタイル: ハイエネルギーな大胆構図。鮮やかで力強い色彩対比、ダイナミックなアングル（わずかな傾き・対角線構図）、躍動感のある光。スクロールを止める衝撃的なビジュアルインパクト。',
+    modEn: (base) => base + '\nPhotography style: High-energy bold composition. Vivid powerful color contrast, dynamic angle (slight tilt, diagonal composition), energetic lighting. A scroll-stopping visual impact.',
+  },
+  {
+    id: 'story', icon: '🎭', name: 'ストーリー', tag: 'tag-story', tagLabel: '感情訴求',
+    descJa: '感情的な文脈・人間的なつながり・買った後の物語を語る構図。',
+    descEn: 'Emotional context, human connection, narrative composition that tells the story of life with this product.',
+    modJa: (base) => base + '\n撮影スタイル: 感情的なナラティブ。人物の手・シルエット・生活の断片を使って「この商品がある人生の物語」を語る。具体的な使用シーンを深く描写。見た人が「自分のことだ」と感じる共感性重視。',
+    modEn: (base) => base + '\nPhotography style: Emotional narrative. Use hands, silhouettes, or life fragments to tell "the story of life with this product." Deep, specific usage scene. Viewer thinks "that could be me" — maximum empathy.',
+  },
+];
+
+// ===== 選択状態 =====
+let selectedVariations = new Set();
+
+// ===== バリエーション生成 =====
+function generateVariations() {
+  const name = document.getElementById('productName').value.trim();
+  const category = document.getElementById('category').value;
+  if (!name) { alert('商品名を入力してください。'); return; }
+  if (!category) { alert('カテゴリを選択してください。'); return; }
+
+  const color    = document.getElementById('colorMaterial').value.trim();
+  const size     = document.getElementById('sizeShape').value.trim();
+  const features = document.getElementById('features').value.trim();
+  const scene    = document.getElementById('scene').value.trim();
+  const style    = document.getElementById('style').value;
+  const pain     = document.getElementById('painPoint').value.trim();
+  const gain     = document.getElementById('desiredOutcome').value.trim();
+  const usp      = document.getElementById('usp').value.trim();
+  const emos     = getSelectedEmos();
+  const refs     = refImages.filter(r => r.selected && r.note);
+  const ctx      = { name, category, color, size, features, scene, style, pain, gain, usp, emos, refs, fw: selectedFw };
+
+  selectedVariations.clear();
+  document.getElementById('variationsEmpty').style.display = 'none';
+  document.getElementById('variationsSection').style.display = 'block';
+  document.getElementById('combineResult').style.display = 'none';
+  document.getElementById('combineBar').classList.remove('visible');
+
+  // 使用するレンズを varCount 分選ぶ
+  const usedLenses = lenses.slice(0, varCount);
+  const grid = document.getElementById('variationsGrid');
+  grid.innerHTML = '';
+
+  usedLenses.forEach((lens, idx) => {
+    const basePrompt = selectedLang === 'en' ? buildEnPrompt(ctx, selectedType) : buildJaPrompt(ctx, selectedType);
+    const fullPrompt = selectedLang === 'en' ? lens.modEn(basePrompt) : lens.modJa(basePrompt);
+    const varId = lens.id;
+
+    const card = document.createElement('div');
+    card.className = 'var-card';
+    card.dataset.id = varId;
+    card.dataset.prompt = fullPrompt;
+    card.dataset.lens = JSON.stringify(lens);
+    card.innerHTML = `
+      <div class="var-card-header">
+        <span class="var-lens-icon">${lens.icon}</span>
+        <span class="var-lens-name">案 ${idx+1}：${lens.name}</span>
+        <span class="var-lens-tag ${lens.tag}">${lens.tagLabel}</span>
+      </div>
+      <div class="var-card-body">
+        <div class="var-prompt-text">${escHtml(fullPrompt)}</div>
+        <div class="var-card-footer">
+          <button class="var-select-btn" onclick="toggleVarSelect('${varId}')">掛け合わせに追加</button>
+          <button class="var-copy-btn" onclick="copyVarPrompt(this, '${varId}')">コピー</button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  showComplianceNotes();
+}
+
+// ===== バリエーション選択切替 =====
+function toggleVarSelect(varId) {
+  const card = document.querySelector(`.var-card[data-id="${varId}"]`);
+  if (!card) return;
+  if (selectedVariations.has(varId)) {
+    selectedVariations.delete(varId);
+    card.classList.remove('selected');
+    card.querySelector('.var-select-btn').textContent = '掛け合わせに追加';
+  } else {
+    selectedVariations.add(varId);
+    card.classList.add('selected');
+    card.querySelector('.var-select-btn').textContent = '✓ 選択中';
+  }
+  updateCombineBar();
+}
+
+function updateCombineBar() {
+  const bar = document.getElementById('combineBar');
+  const tagsEl = document.getElementById('combineSelectedTags');
+  const whatEl = document.getElementById('combineWhat');
+
+  if (selectedVariations.size < 2) {
+    bar.classList.remove('visible');
+    return;
+  }
+  bar.classList.add('visible');
+
+  // タグ表示
+  tagsEl.innerHTML = '';
+  selectedVariations.forEach(id => {
+    const lens = lenses.find(l => l.id === id);
+    if (!lens) return;
+    const tag = document.createElement('div');
+    tag.className = 'combine-tag';
+    tag.innerHTML = `<span class="ct-icon">${lens.icon}</span>${lens.name}`;
+    tagsEl.appendChild(tag);
+  });
+
+  // 掛け合わせ内容の説明
+  const descs = Array.from(selectedVariations).map(id => {
+    const lens = lenses.find(l => l.id === id);
+    return lens ? `「${lens.name}」(${selectedLang === 'ja' ? lens.descJa : lens.descEn})` : '';
+  }).filter(Boolean);
+  whatEl.textContent = `掛け合わせ内容: ${descs.join(' ＋ ')}`;
+}
+
+function clearSelection() {
+  selectedVariations.clear();
+  document.querySelectorAll('.var-card').forEach(c => {
+    c.classList.remove('selected');
+    const btn = c.querySelector('.var-select-btn');
+    if (btn) btn.textContent = '掛け合わせに追加';
+  });
+  document.getElementById('combineBar').classList.remove('visible');
+  document.getElementById('combineResult').style.display = 'none';
+}
+
+// ===== 掛け合わせ =====
+function combineSelected() {
+  if (selectedVariations.size < 2) return;
+
+  const cards = Array.from(selectedVariations).map(id => document.querySelector(`.var-card[data-id="${id}"]`)).filter(Boolean);
+  const prompts = cards.map(c => c.dataset.prompt);
+  const usedLenses = Array.from(selectedVariations).map(id => lenses.find(l => l.id === id)).filter(Boolean);
+
+  // ベースプロンプトを1つ目から取り、各レンズの撮影スタイル修飾を統合する
+  const basePrompt = prompts[0];
+  const styleInserts = usedLenses.map((lens, i) => {
+    if (i === 0) return null; // 1つ目はベースに含まれる
+    // モディファイア行を抜き出す
+    const mod = selectedLang === 'en'
+      ? lens.modEn('').replace(/\n/g,'').trim()
+      : lens.modJa('').replace(/\n/g,'').trim();
+    return mod;
+  }).filter(Boolean);
+
+  const lensNames = usedLenses.map(l => `${l.icon}${l.name}`).join('×');
+  const combined = selectedLang === 'en'
+    ? buildCombinedEn(basePrompt, usedLenses, lensNames)
+    : buildCombinedJa(basePrompt, usedLenses, lensNames);
+
+  const resultEl = document.getElementById('combineResult');
+  document.getElementById('combineResultText').textContent = combined;
+  resultEl.querySelector('.combine-result-header').innerHTML = `🔀 掛け合わせ結果 — ${lensNames}`;
+  resultEl.style.display = 'block';
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function buildCombinedJa(basePrompt, usedLenses, lensNames) {
+  // ベースから「撮影スタイル:」行を除去して統合スタイルに差し替える
+  const base = basePrompt.replace(/\n撮影スタイル:.*$/s, '').trim();
+  const styleDescs = usedLenses.map(l => {
+    // 各レンズのスタイル説明を短く抽出
+    const m = l.modJa('').match(/撮影スタイル: (.+)/);
+    return m ? m[1] : '';
+  }).filter(Boolean);
+
+  const combinedStyle = `撮影スタイル（掛け合わせ: ${lensNames}）:\n${styleDescs.map((s,i) => `・${usedLenses[i].name}要素: ${s}`).join('\n')}`;
+  return `${base}\n${combinedStyle}`;
+}
+
+function buildCombinedEn(basePrompt, usedLenses, lensNames) {
+  const base = basePrompt.replace(/\nPhotography style:.*$/s, '').trim();
+  const styleDescs = usedLenses.map(l => {
+    const m = l.modEn('').match(/Photography style: (.+)/);
+    return m ? m[1] : '';
+  }).filter(Boolean);
+
+  const combinedStyle = `Photography style (combined: ${lensNames}):\n${styleDescs.map((s,i) => `- ${usedLenses[i].name} element: ${s}`).join('\n')}`;
+  return `${base}\n${combinedStyle}`;
+}
+
+function copyCombineResult() {
+  const text = document.getElementById('combineResultText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('combineCopyBtn');
+    btn.textContent = '✓ コピー済み'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function copyVarPrompt(btn, varId) {
+  const card = document.querySelector(`.var-card[data-id="${varId}"]`);
+  if (!card) return;
+  navigator.clipboard.writeText(card.dataset.prompt).then(() => {
+    btn.textContent = '✓ コピー済み'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ===== 全7枚カルーセル生成 =====
+function generateAllCarousel() {
+  const name = document.getElementById('productName').value.trim();
+  if (!name) { alert('先に「プロンプト生成」タブで商品名を入力してください。'); return; }
+
+  const color    = document.getElementById('colorMaterial').value.trim();
+  const size     = document.getElementById('sizeShape').value.trim();
+  const features = document.getElementById('features').value.trim();
+  const scene    = document.getElementById('scene').value.trim();
+  const style    = document.getElementById('style').value;
+  const pain     = document.getElementById('painPoint').value.trim();
+  const gain     = document.getElementById('desiredOutcome').value.trim();
+  const usp      = document.getElementById('usp').value.trim();
+  const emos     = getSelectedEmos();
+  const refs     = refImages.filter(r => r.selected && r.note);
+  const ctx = { name, color, size, features, scene, style, pain, gain, usp, emos, refs, fw: selectedFw };
+
+  const steps = [
+    { num:1, icon:'🎯', name:'ヒーローショット',   frame:'Attention', type:'main' },
+    { num:2, icon:'💥', name:'ペイン共感',         frame:'Problem',   type:'pain_shot' },
+    { num:3, icon:'⭐', name:'主要ベネフィット',   frame:'Interest',  type:'benefit' },
+    { num:4, icon:'🌿', name:'ライフスタイル',     frame:'Desire',    type:'lifestyle' },
+    { num:5, icon:'🔍', name:'品質・信頼証明',     frame:'Trust',     type:'detail' },
+    { num:6, icon:'📐', name:'スペック・サイズ',   frame:'Confidence',type:'size' },
+    { num:7, icon:'🏁', name:'総まとめ・CTA',      frame:'Action',    type:'summary' },
+  ];
+
+  const container = document.getElementById('carouselResults');
+  container.innerHTML = '';
+
+  steps.forEach(step => {
+    const lang = selectedLang;
+    const prompt = lang==='en' ? buildEnPrompt(ctx, step.type, step) : buildJaPrompt(ctx, step.type, step);
+    const div = document.createElement('div');
+    div.className = 'carousel-result-item';
+    div.innerHTML = `
+      <div class="carousel-result-header">
+        <div class="step-num">${step.num}</div>
+        ${step.icon} ${step.name}
+        <span style="font-size:10px; opacity:0.7; margin-left:auto;">${step.frame}</span>
+      </div>
+      <div class="carousel-result-body">
+        <div class="carousel-prompt-text">${escHtml(prompt)}</div>
+        <button class="btn-copy-small" onclick="copyEl(this, ${JSON.stringify(prompt).replace(/"/g,'&quot;')})">コピー</button>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function copyEl(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ コピー済み'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ===== スタイル説明 =====
+const styleEn = {
+  clean:'clean minimalist aesthetic, white and light gray tones, soft studio lighting',
+  natural:'natural organic aesthetic, warm wood tones and green accents, natural light',
+  luxury:'luxurious premium aesthetic, deep dark background with gold and silver accents, dramatic lighting',
+  energetic:'energetic fresh aesthetic, crisp blue and white tones, dynamic composition',
+  warm:'warm cozy home aesthetic, beige and warm earth tones, soft gentle lighting',
+  professional:'professional corporate aesthetic, clean structured composition, cool neutral tones',
+  playful:'playful colorful pop aesthetic, vibrant saturated colors, fun dynamic energy',
+};
+const styleJa = {
+  clean:'クリーンでミニマルな雰囲気、ホワイト・ライトグレー調、柔らかいスタジオ照明',
+  natural:'ナチュラル・オーガニックな雰囲気、温かみのある木目・グリーンアクセント、自然光',
+  luxury:'高級感・プレミアムな雰囲気、深いダーク背景とゴールド・シルバーアクセント、ドラマチックな照明',
+  energetic:'アクティブで爽やかな雰囲気、クリスプなブルー・ホワイト調、ダイナミックな構図',
+  warm:'温かみのあるホーム・ファミリーな雰囲気、ベージュ・暖色調、柔らかい優しい照明',
+  professional:'プロフェッショナルなビジネス雰囲気、クリーンで構造的な構図、クールなニュートラルトーン',
+  playful:'ポップでカラフルな雰囲気、鮮やかな彩度の高い色、楽しくダイナミックなエネルギー',
+};
+
+// ===== 英語プロンプト =====
+function buildEnPrompt(ctx, type, step) {
+  const { name, color, size, features, scene, style, pain, gain, usp, emos, refs, fw } = ctx;
+  const s = styleEn[style] || styleEn.clean;
+  const pos = getPosData('en');
+  const season = getSeasonData('en');
+  const colorPalette = getColorPalette(emos, 'en');
+  const personaText = getPersonaText('en');
+
+  const emoText   = emos.length ? `Emotional tone: evoke feelings of ${emos.join(', ')}.` : '';
+  const refText   = refs.length ? `Style references (from competitor research): ${refs.map(r=>r.note).join('; ')}.` : '';
+  const uspText   = usp ? `Unique selling point: ${usp}.` : '';
+  const posText   = `Positioning: ${pos.light}. Color direction: ${pos.color}.`;
+  const seasonTxt = season.desc ? `Seasonal context: ${season.desc}. Seasonal palette: ${season.color}.` : '';
+
+  const productDesc = [name, color, size].filter(Boolean).join(', ');
+  const featureLines = features ? `Product features: ${features.replace(/\n/g,', ')}.` : '';
+  const gainText  = gain  ? `After using this product, the customer feels/achieves: ${gain.replace(/\n/g,', ')}.` : '';
+  const painText  = pain  ? `Customer pain point before purchase: ${pain.replace(/\n/g,', ')}.` : '';
+
+  let instruction = '';
+  switch(type) {
+    case 'main':
+      instruction = `Pure white background (RGB 255,255,255). Product centered, filling 85%+ of frame. No text, no logos, no props, no shadows. ${s}. Photorealistic studio lighting. This is the hero shot — make the product look irresistible at first glance. ${emoText} ${uspText}`;
+      break;
+    case 'pain_shot':
+      instruction = `Visualize the customer's frustration or pain point WITHOUT the product. ${painText} Show relatable scene of the problem — mood is slightly tense or inconvenient, but not dark. ${s} (slightly muted). This creates emotional resonance. No text overlays.`;
+      break;
+    case 'benefit':
+      instruction = `Showcase the top 3 key benefits using a clean split layout. ${featureLines} ${gainText} ${uspText} FAB approach: show the BENEFIT (outcome), not just the feature. ${s}. No promotional text.`;
+      break;
+    case 'lifestyle':
+      instruction = `Lifestyle scene showing the ideal outcome. ${gainText} Setting: ${scene || 'natural real-world environment'}. ${s}. ${personaText} The customer should see themselves in this image. No promotional text. ${emoText}`;
+      break;
+    case 'detail':
+      instruction = `Extreme close-up macro shot of the product's highest-quality materials or craftsmanship. ${featureLines} ${uspText} ${s}. Dramatic studio lighting to emphasize texture and quality. Sharp focus, neutral background.`;
+      break;
+    case 'size':
+      instruction = `Product shown with a relatable reference object to communicate exact scale. ${s}. Clean neutral background. Accurate proportions.`;
+      break;
+    case 'summary':
+      instruction = `Clean summary composition with product prominently featured. ${gainText} ${uspText} ${s}. Strong, confident final-persuasion composition. ${emoText}`;
+      break;
+    case 'usecase':
+      instruction = `Step-by-step visual showing how easy and satisfying it is to use the product. ${s}. Hands and product interaction. Minimal background.`;
+      break;
+    case 'beforeafter':
+      instruction = `Split composition: LEFT side shows the problem/before state (${painText || 'customer struggle without the product'}), RIGHT side shows the ideal after state (${gainText || 'happy outcome with product'}). Same visual style both sides for clear contrast. ${s}. No text labels needed — the visual contrast speaks for itself. ${emoText}`;
+      break;
+    default:
+      instruction = `High-quality product image. ${s}. ${emoText}`;
+  }
+
+  const stepHeader = step ? `[Image ${step.num}/7 — ${step.name} / ${step.frame}]\n` : '';
+  return `${stepHeader}Create a high-quality Amazon product listing image:
+
+Product: ${productDesc}
+${featureLines}
+${uspText}
+${painText}
+${gainText}
+${personaText}
+${posText}
+${colorPalette}
+${seasonTxt}
+${emoText}
+${refText}
+
+Instruction: ${instruction}
+
+Technical: ${getSizeText('en')}, sRGB, ${getFormat()} format. No text overlays, no "sale"/"free shipping" labels, no Amazon logos. Photorealistic rendering.`.replace(/\n{3,}/g,'\n\n').trim();
+}
+
+// ===== 日本語プロンプト =====
+function buildJaPrompt(ctx, type, step) {
+  const { name, color, size, features, scene, style, pain, gain, usp, emos, refs, fw } = ctx;
+  const s = styleJa[style] || styleJa.clean;
+  const pos = getPosData('ja');
+  const season = getSeasonData('ja');
+  const colorPalette = getColorPalette(emos, 'ja');
+  const personaText = getPersonaText('ja');
+
+  const emoText   = emos.length ? `感情的なトーン: ${emos.join('・')}を感じさせる表現。` : '';
+  const refText   = refs.length ? `参考スタイル（競合調査より）: ${refs.map(r=>r.note).join('。')}.` : '';
+  const uspText   = usp ? `USP（唯一の強み）: ${usp}.` : '';
+  const posText   = `ポジショニング: ${pos.light}。カラー方向性: ${pos.color}。`;
+  const seasonTxt = season.desc ? `季節・シーズン: ${season.desc}。季節カラー: ${season.color}。` : '';
+
+  const productDesc = [name, color, size].filter(Boolean).join('、');
+  const featureLines = features ? `商品特徴: ${features.replace(/\n/g,'、')}.` : '';
+  const gainText  = gain  ? `購入後の理想の状態: ${gain.replace(/\n/g,'、')}.` : '';
+  const painText  = pain  ? `購入前の悩み・ペインポイント: ${pain.replace(/\n/g,'、')}.` : '';
+
+  let instruction = '';
+  switch(type) {
+    case 'main':
+      instruction = `純白背景（RGB 255,255,255）。商品をフレームの85%以上に配置。テキスト・ロゴ・小道具・影なし。${s}。フォトリアルなスタジオ照明。一目で「欲しい！」と思わせるヒーローショット。${uspText}${emoText}`;
+      break;
+    case 'pain_shot':
+      instruction = `商品なしで顧客の悩み・不満を視覚化したシーン。${painText}共感できる不便な場面を表現—暗すぎず、日常的なトーンで。${s}（やや落ち着いたトーン）。感情的な共感を生む。テキストなし。`;
+      break;
+    case 'benefit':
+      instruction = `商品の主要ベネフィット3つをクリーンなレイアウトで視覚化。${featureLines}${gainText}${uspText}FABアプローチ: 機能ではなく「顧客への恩恵（結果）」を見せる。${s}。価格・販促テキストなし。`;
+      break;
+    case 'lifestyle':
+      instruction = `商品を使った後の理想の状態を見せるライフスタイルシーン。${gainText}シーン: ${scene||'自然な生活環境'}。${s}。${personaText}「これが私の生活だ」と顧客が感じる共感性の高い画像。販促テキストなし。${emoText}`;
+      break;
+    case 'detail':
+      instruction = `商品の最高品質な素材や職人技を際立たせたマクロクローズアップ。${featureLines}${uspText}${s}。ドラマチックなスタジオ照明で質感と品質を強調。シャープなフォーカス、ニュートラル背景。`;
+      break;
+    case 'size':
+      instruction = `一般的な参照物（手・日用品・定規）と商品を並べてサイズ感を正確に伝える。${s}。クリーンなニュートラル背景。正確な比率。`;
+      break;
+    case 'summary':
+      instruction = `商品を主役にした締めくくりのサマリー構図。主要な売りを視覚的（テキストなし）で示す。${gainText}${uspText}${s}。「なぜこの商品か」を一目で伝える自信のある力強い構図。${emoText}`;
+      break;
+    case 'usecase':
+      instruction = `商品の使い方が簡単で気持ちよいと分かるビジュアル。${s}。手と商品のインタラクションにフォーカス。シンプルな背景。`;
+      break;
+    case 'beforeafter':
+      instruction = `左右分割構図: 左側＝Before（${painText || '商品なしの不便な状態'}）、右側＝After（${gainText || '商品使用後の理想の状態'}）。同じビジュアルスタイルで対比を明確に表現。${s}。テキストラベル不要—ビジュアルの対比で全てを語る。${emoText}`;
+      break;
+    default:
+      instruction = `高品質な商品画像。${s}。${emoText}`;
+  }
+
+  const stepHeader = step ? `[画像${step.num}/7 — ${step.name} / ${step.frame}]\n` : '';
+  return `${stepHeader}以下の商品のAmazon商品ページ用高品質画像を作成してください。
+
+商品: ${productDesc}
+${featureLines}
+${uspText}
+${painText}
+${gainText}
+${personaText}
+${posText}
+${colorPalette}
+${seasonTxt}
+${emoText}
+${refText}
+
+指示: ${instruction}
+
+技術要件: ${getSizeText('ja')}、sRGB、${getFormat()}形式。テキストオーバーレイなし、「セール」「送料無料」等のラベルなし、Amazonロゴなし。フォトリアルなレンダリング。`.replace(/\n{3,}/g,'\n\n').trim();
+}
+
+// ===== 規約チェック =====
+const complianceRules = {
+  main:        [{ok:true,text:'純白背景指定済み'},{ok:true,text:'85%ルール指定済み'},{ok:true,text:'テキスト・ロゴなし指定済み'},{ok:false,text:'生成後: 背景の純白を確認'},{ok:false,text:'生成後: 商品以外のオブジェクト確認'}],
+  lifestyle:   [{ok:true,text:'販促テキストなし指定済み'},{ok:false,text:'生成後: Amazonロゴなし確認'}],
+  benefit:     [{ok:true,text:'FABアプローチで顧客視点のベネフィット訴求'},{ok:false,text:'生成後: 価格・割引表示がないか確認'}],
+  detail:      [{ok:true,text:'ニュートラル背景指定済み'},{ok:false,text:'生成後: 実際の商品と一致しているか確認'}],
+  size:        [{ok:true,text:'スケール参照物指定済み'},{ok:false,text:'生成後: 実際のサイズと比率が正確か確認'}],
+  usecase:     [{ok:true,text:'クリーンな説明スタイル指定済み'},{ok:false,text:'生成後: 使い方が正確か確認'}],
+  pain_shot:   [{ok:true,text:'商品なし・共感シーン指定済み'},{ok:false,text:'生成後: 暗すぎないか確認'}],
+  summary:     [{ok:true,text:'サマリー構図指定済み'},{ok:false,text:'生成後: テキストオーバーレイがないか確認'}],
+  beforeafter: [{ok:true,text:'Before/After左右分割構図指定済み'},{ok:true,text:'テキストラベルなし指定済み'},{ok:false,text:'生成後: Before/Afterの対比が明確か確認'}],
+};
+function showComplianceNotes() {
+  const rules = complianceRules[selectedType] || [];
+  const list = document.getElementById('rulesList');
+  list.innerHTML = '';
+  rules.forEach(r => {
+    const li = document.createElement('li');
+    if (!r.ok) li.classList.add('ng');
+    li.textContent = r.text;
+    list.appendChild(li);
+  });
+  document.getElementById('complianceNotes').style.display = 'block';
+}
+
+// ===== 参考画像 =====
+function parseAmazonUrl() {
+  const url = document.getElementById('asinUrl').value.trim();
+  if (!url) return;
+  const asin = extractAsin(url);
+  const el = document.getElementById('asinResult');
+  if (!asin) { el.innerHTML=`<div style="color:var(--warning);font-size:11px;padding:6px;">ASINを取得できませんでした。URLを確認してください。</div>`; return; }
+  const domain = url.includes('amazon.co.jp') ? 'amazon.co.jp' : 'amazon.com';
+  el.innerHTML = `<div class="asin-info">ASIN: <strong>${asin}</strong><br><a href="https://www.${domain}/dp/${asin}" target="_blank" rel="noopener">商品ページを開く →</a><br><small style="color:#888;">画像を右クリック→保存してアップロード、またはURLをコピーして貼り付け</small></div>`;
+  document.getElementById('asinUrl').value = '';
+}
+function extractAsin(url) {
+  for (const p of [/\/dp\/([A-Z0-9]{10})/,/\/gp\/product\/([A-Z0-9]{10})/,/asin=([A-Z0-9]{10})/i]) {
+    const m = url.match(p); if (m) return m[1];
+  }
+  return null;
+}
+function addImageByUrl() {
+  const url = document.getElementById('imgUrl').value.trim();
+  if (!url) return;
+  addRefImage(url, 'URL追加'); document.getElementById('imgUrl').value='';
+}
+function handleFileUpload(e) {
+  Array.from(e.target.files).forEach(f => {
+    const r = new FileReader(); r.onload = ev => addRefImage(ev.target.result, f.name); r.readAsDataURL(f);
+  }); e.target.value='';
+}
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')).forEach(f=>{
+    const r=new FileReader(); r.onload=ev=>addRefImage(ev.target.result,f.name); r.readAsDataURL(f);
+  });
+});
+function addRefImage(src, label) {
+  refImages.push({ id: Date.now()+Math.random(), src, label, note:'', selected:false });
+  renderGallery();
+}
+function renderGallery() {
+  const g = document.getElementById('refGallery');
+  if (!refImages.length) { g.innerHTML=`<div class="empty-gallery"><span class="empty-icon">📷</span>まだ画像がありません。<br>上のフォームから追加してください。</div>`; return; }
+  g.innerHTML='';
+  refImages.forEach(img => {
+    const d = document.createElement('div');
+    d.className='ref-item'+(img.selected?' selected':'');
+    d.innerHTML=`<img src="${img.src}" alt="${img.label}" onerror="this.parentElement.remove()" onclick="toggleRef(${img.id})">
+      <button class="ref-item-del" onclick="deleteRef(${img.id})">×</button>
+      <div class="ref-item-body">
+        <div style="font-size:10px;color:var(--blue);margin-bottom:3px;">${img.label.slice(0,28)}</div>
+        <textarea class="ref-item-note" placeholder="気に入った点のメモ（背景・ライティング・構図など）" onchange="updateNote(${img.id},this.value)">${img.note}</textarea>
+        <div class="ref-item-actions"><button class="ref-select-btn" onclick="toggleRef(${img.id})">${img.selected?'✓ 選択中':'参考に使う'}</button></div>
+      </div>`;
+    g.appendChild(d);
+  });
+  updateSelectedRefsBar();
+}
+function toggleRef(id) { const i=refImages.find(r=>r.id===id); if(i){i.selected=!i.selected; renderGallery();} }
+function deleteRef(id) { refImages=refImages.filter(r=>r.id!==id); renderGallery(); }
+function updateNote(id,v) { const i=refImages.find(r=>r.id===id); if(i) i.note=v; }
+
+// ===== 販売戦略タブ =====
+let strategyImages = [];
+
+// 商品画像アップロード
+function handleStrategyImages(e) {
+  Array.from(e.target.files).forEach(f => {
+    const r = new FileReader();
+    r.onload = ev => {
+      strategyImages.push({ id: Date.now()+Math.random(), src: ev.target.result, name: f.name });
+      renderStrategyPreviews();
+    };
+    r.readAsDataURL(f);
+  });
+  e.target.value = '';
+}
+function renderStrategyPreviews() {
+  const grid = document.getElementById('strategyPreviewGrid');
+  grid.innerHTML = '';
+  strategyImages.forEach(img => {
+    const wrap = document.createElement('div');
+    wrap.className = 'product-thumb-wrap';
+    wrap.innerHTML = `<img class="product-thumb" src="${img.src}" title="${img.name}">
+      <button class="product-thumb-del" onclick="removeStrategyImage(${img.id})">×</button>`;
+    grid.appendChild(wrap);
+  });
+}
+function removeStrategyImage(id) {
+  strategyImages = strategyImages.filter(i => i.id !== id);
+  renderStrategyPreviews();
+}
+
+// ドラッグ＆ドロップ（戦略タブ）
+const sdz = document.getElementById('strategyDropZone');
+sdz.addEventListener('dragover', e => { e.preventDefault(); sdz.style.borderColor = 'var(--orange)'; });
+sdz.addEventListener('dragleave', () => { sdz.style.borderColor = ''; });
+sdz.addEventListener('drop', e => {
+  e.preventDefault(); sdz.style.borderColor = '';
+  Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')).forEach(f => {
+    const r = new FileReader();
+    r.onload = ev => { strategyImages.push({ id: Date.now()+Math.random(), src: ev.target.result, name: f.name }); renderStrategyPreviews(); };
+    r.readAsDataURL(f);
+  });
+});
+
+// 競合URL追加・削除
+function addCompetitor() {
+  const list = document.getElementById('competitorList');
+  if (list.querySelectorAll('.competitor-row').length >= 5) { alert('競合URLは最大5件です。'); return; }
+  const row = document.createElement('div');
+  row.className = 'competitor-row';
+  row.innerHTML = `<input type="text" class="competitor-url" placeholder="https://www.amazon.co.jp/dp/XXXXXXXXXX">
+    <button class="btn-sm btn-gray" onclick="removeCompetitor(this)" style="background:#f5f5f5; border:1px solid #ddd; color:#999;">✕</button>`;
+  list.appendChild(row);
+}
+function removeCompetitor(btn) {
+  const rows = document.querySelectorAll('.competitor-row');
+  if (rows.length <= 1) { btn.previousElementSibling.value = ''; return; }
+  btn.parentElement.remove();
+}
+
+// 戦略タブ切り替え
+function switchStrategyTab(idx) {
+  document.querySelectorAll('.s-tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+  document.querySelectorAll('.strategy-output-panel').forEach((p,i) => p.classList.toggle('active', i===idx));
+}
+
+// コピー
+function copyStrategyPrompt(idx) {
+  const text = document.getElementById('sText'+idx).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('sCopy'+idx);
+    btn.textContent = '✓ コピー済み'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ===== メインのプロンプト生成 =====
+function generateStrategyPrompts() {
+  const productName = document.getElementById('strategyProductName').value.trim();
+  const usage       = document.getElementById('strategyUsage').value.trim();
+  if (!usage) { alert('商品の使い方・特徴の説明を入力してください。'); return; }
+
+  const price       = document.getElementById('strategyPrice').value.trim();
+  const challenges  = document.getElementById('strategyChallenges').value.trim();
+  const focus       = document.getElementById('strategyFocus').value.trim();
+  const posReviews  = document.getElementById('reviewPositive').value.trim();
+  const negReviews  = document.getElementById('reviewNegative').value.trim();
+  const urls        = Array.from(document.querySelectorAll('.competitor-url')).map(i => i.value.trim()).filter(Boolean);
+  const hasImages   = strategyImages.length > 0;
+
+  const urlBlock = urls.length
+    ? `競合商品URL（ブラウジングでアクセスして分析してください）:\n${urls.map((u,i)=>`${i+1}. ${u}`).join('\n')}`
+    : '（競合URLは未入力）';
+
+  const reviewBlock = [
+    posReviews ? `【高評価レビュー ★4〜5（貼り付けテキスト）】\n${posReviews}` : '',
+    negReviews ? `【低評価レビュー ★1〜2（貼り付けテキスト）】\n${negReviews}` : '',
+  ].filter(Boolean).join('\n\n');
+
+  const imageNote = hasImages
+    ? `※ この会話に商品画像（${strategyImages.length}枚）を添付していますので、画像も分析に含めてください。`
+    : `※ 商品画像は別途添付します（添付後にこの内容で分析をお願いします）。`;
+
+  // === プロンプト1: 販売戦略 ===
+  const p1 = `あなたはAmazon販売の専門コンサルタントです。以下の情報をもとに、詳細な販売戦略を立案してください。
+
+${imageNote}
+
+【自社商品情報】
+商品名: ${productName || '（商品名未入力）'}
+価格帯: ${price || '未入力'}
+使い方・特徴・競合との違い:
+${usage}
+${challenges ? `\n現在の課題:\n${challenges}` : ''}
+
+【競合情報】
+${urlBlock}
+${reviewBlock ? `\n${reviewBlock}` : ''}
+${focus ? `\n【特に分析してほしいこと】\n${focus}` : ''}
+
+---
+上記の情報をもとに、以下の項目を具体的に回答してください:
+
+1. **ターゲット顧客の定義**
+   - 最も購買可能性が高い顧客像（年齢・性別・ライフスタイル・購買動機）
+   - 競合レビューから読み取れる「実際の購入者像」との比較
+
+2. **差別化ポイントと訴求軸**
+   - 競合商品が解決できていない不満（低評価レビューより）
+   - 自社商品が提供できる独自の価値（USP）
+   - 最も強調すべきメッセージ TOP3
+
+3. **価格戦略**
+   - 競合価格帯の中でのポジショニング提案
+   - 価格に見合う価値をどう見せるか
+
+4. **Amazon検索・表示戦略**
+   - どんなキーワードで検索されるか
+   - タイトル・箇条書きで使うべき表現
+
+5. **販売初期の優先アクション**
+   - レビューゼロ・販売初期から売上を作る具体的な3ステップ`.trim();
+
+  // === プロンプト2: 競合分析 ===
+  const p2 = `あなたはAmazon商品リスティングの専門分析家です。以下の情報をもとに、徹底的な競合分析と差別化戦略を提案してください。
+
+${imageNote}
+
+【自社商品情報】
+商品名: ${productName || '（商品名未入力）'}
+使い方・特徴:
+${usage}
+${price ? `価格帯: ${price}` : ''}
+
+【競合商品URL】
+${urlBlock}
+
+${reviewBlock ? `【競合レビュー（テキスト）】\n${reviewBlock}` : ''}
+
+---
+以下の項目で詳しく分析してください:
+
+1. **競合商品の画像戦略分析**（各URLにアクセスして）
+   - 各競合のメイン画像・サブ画像で使われている戦略
+   - どんな訴求軸・感情を使っているか
+   - 画像の強み・弱点
+
+2. **レビューマイニング**
+   - 高評価（★4〜5）から: 顧客が本当に評価している点 TOP5
+   - 低評価（★1〜2）から: 繰り返し出てくる不満・期待外れ TOP5
+   - 顧客が実際に使っている言葉・表現（そのままコピーライティングに使える言葉）
+
+3. **市場のスキマ（Gap分析）**
+   - 競合が誰も解決できていないペインポイント
+   - 自社商品で埋められる差別化の余地
+
+4. **自社商品の競合優位性マトリクス**
+   - 競合A・B・C vs 自社の比較表（価格・品質・機能・画像力・レビュー数）
+
+5. **今すぐ真似すべき競合の戦略と、絶対に差別化すべき点の整理**`.trim();
+
+  // === プロンプト3: 画像制作計画 ===
+  const p3 = `あなたはAmazon商品リスティング画像のクリエイティブディレクターです。以下の商品情報と競合分析をもとに、コンバージョン率を最大化する「7枚カルーセル画像制作計画」を立案してください。
+
+${imageNote}
+
+【自社商品情報】
+商品名: ${productName || '（商品名未入力）'}
+使い方・特徴:
+${usage}
+${price ? `価格帯: ${price}` : ''}
+
+【競合商品URL（参考）】
+${urlBlock}
+
+${reviewBlock ? `【競合レビューから読み取った顧客インサイト】\n${reviewBlock}` : ''}
+
+---
+Amazon商品カルーセル7枚の制作計画を、以下の形式で各画像ごとに詳しく回答してください:
+
+**【画像1/7: メイン画像 — Attention（注目を奪う）】**
+- 目的と戦略:
+- 推奨する構図・アングル:
+- 背景・照明:
+- この画像でのUSP表現方法:
+- 競合との差別化ポイント:
+
+**【画像2/7: ペイン共感 — Problem（悩みに共感）】**
+- 表現すべきペインポイント（レビューより）:
+- シーン・構図:
+- 感情的な訴求方法:
+
+**【画像3/7: ベネフィット訴求 — Interest（興味を深める）】**
+- 伝えるべきベネフィット TOP3（機能ではなく恩恵）:
+- 視覚的表現方法:
+
+**【画像4/7: ライフスタイル — Desire（欲しいと思わせる）】**
+- ターゲットが「これが自分の生活だ」と感じるシーン:
+- 登場人物・場所・時間帯:
+- 演出のポイント:
+
+**【画像5/7: 品質証明 — Trust（信頼を構築）】**
+- 見せるべき素材・部品・こだわりのディテール:
+- 照明・撮影方法:
+
+**【画像6/7: サイズ・スペック — Confidence（購入不安を払拭）】**
+- 伝えるべき寸法・比較対象:
+- 構図:
+
+**【画像7/7: 総まとめ — Action（購入を後押し）】**
+- 締めくくりのメッセージ（ビジュアルで表現）:
+- 構図・雰囲気:
+
+最後に: **競合画像に勝つための3つの重点ポイント**を箇条書きで`.trim();
+
+  // 表示
+  [p1, p2, p3].forEach((p, i) => {
+    const el = document.getElementById('sText'+i);
+    el.textContent = p;
+    el.classList.remove('strategy-empty');
+    const btn = document.getElementById('sCopy'+i);
+    btn.style.display = 'block';
+  });
+
+  document.getElementById('strategyOutputArea').style.display = 'block';
+  document.getElementById('strategyOutputArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  switchStrategyTab(0);
+}
+</script>
+</body>
+</html>
