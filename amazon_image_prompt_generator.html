@@ -347,6 +347,51 @@
   .adopted-plan-banner .apb-sub { font-size: 11px; color: #888; margin-top: 2px; }
   .adopted-plan-banner .apb-clear { margin-left: auto; font-size: 11px; color: #aaa; cursor: pointer; text-decoration: underline; }
 
+  /* カルーセルステップ変更ボタン */
+  .cs-change-btn {
+    display: block; width: 100%; margin-top: 5px;
+    padding: 3px 0; font-size: 10px; font-weight: 600;
+    background: white; border: 1px solid var(--border); border-radius: 4px;
+    color: #888; cursor: pointer; transition: all 0.15s;
+  }
+  .cs-change-btn:hover { background: var(--orange); color: white; border-color: var(--orange); }
+
+  /* タイプ選択ポップアップ */
+  #typePickerOverlay {
+    display: none; position: fixed; top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.3); z-index: 2000;
+    align-items: center; justify-content: center;
+  }
+  #typePickerOverlay.open { display: flex; }
+  #typePickerPopup {
+    background: white; border-radius: 12px; padding: 18px;
+    width: 420px; max-width: 95vw; max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  #typePickerPopup h3 { font-size: 14px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+  #typePickerPopup .picker-sub { font-size: 11px; color: #888; margin-bottom: 14px; }
+  .type-picker-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .type-option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border: 2px solid var(--border);
+    border-radius: 8px; cursor: pointer; transition: all 0.15s;
+    background: white;
+  }
+  .type-option:hover { border-color: var(--orange); background: #fffbf5; }
+  .type-option.selected { border-color: var(--orange); background: #fff3e0; }
+  .type-option .to-icon { font-size: 20px; flex-shrink: 0; }
+  .type-option .to-name { font-size: 12px; font-weight: 700; color: var(--dark); }
+  .type-option .to-frame { font-size: 10px; color: #888; margin-top: 1px; }
+  .picker-close-btn {
+    width: 100%; margin-top: 12px; padding: 10px;
+    background: #f5f5f5; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    color: #555; cursor: pointer;
+  }
+  .picker-close-btn:hover { background: #eee; }
+
   /* 同期インジケーター */
   .sync-badge {
     display: inline-flex; align-items: center; gap: 4px;
@@ -1172,6 +1217,16 @@
 </div>
 </div>
 
+<!-- タイプ選択ポップアップ -->
+<div id="typePickerOverlay" onclick="closeTypePicker()">
+  <div id="typePickerPopup" onclick="event.stopPropagation()">
+    <h3>🖼️ 画像タイプを選ぶ</h3>
+    <div class="picker-sub">画像 <span id="pickerSlotNum">1</span> のタイプを変更します</div>
+    <div class="type-picker-grid" id="typePickerGrid"></div>
+    <button class="picker-close-btn" onclick="closeTypePicker()">閉じる</button>
+  </div>
+</div>
+
 <script>
 // ===== タブ =====
 // ===== 共有データストア =====
@@ -1301,30 +1356,97 @@ function clearAdoptedPlan() {
   refreshAdoptedBanner();
 }
 
-// カルーセルトラックを動的に描画
-const allCarouselSteps = [
-  { num:1, icon:'🎯', name:'ヒーローショット',   frame:'Attention',  type:'main' },
-  { num:2, icon:'💥', name:'ペイン共感',         frame:'Problem',    type:'pain_shot' },
-  { num:3, icon:'⭐', name:'主要ベネフィット',   frame:'Interest',   type:'benefit' },
-  { num:4, icon:'🌿', name:'ライフスタイル',     frame:'Desire',     type:'lifestyle' },
-  { num:5, icon:'🔍', name:'品質・信頼証明',     frame:'Trust',      type:'detail' },
-  { num:6, icon:'📐', name:'スペック・比較',     frame:'Confidence', type:'size' },
-  { num:7, icon:'🏁', name:'総まとめ・CTA',      frame:'Action',     type:'summary' },
-  { num:8, icon:'🎬', name:'使用シーン',         frame:'Usage',      type:'usecase' },
-  { num:9, icon:'🔄', name:'Before/After',       frame:'Proof',      type:'beforeafter' },
+// ===== カルーセルトラック（動的・タイプ選択対応）=====
+
+// 全タイプ一覧（選択肢）
+const allImageTypes = [
+  { type:'main',        icon:'🎯', name:'ヒーローショット',   frame:'Attention',  desc:'白背景・商品主役・最初の1枚' },
+  { type:'pain_shot',   icon:'💥', name:'ペイン共感',         frame:'Problem',    desc:'ターゲットの悩みに共感するシーン' },
+  { type:'benefit',     icon:'⭐', name:'ベネフィット訴求',   frame:'Interest',   desc:'機能ではなく「恩恵」を伝える' },
+  { type:'lifestyle',   icon:'🌿', name:'ライフスタイル',     frame:'Desire',     desc:'理想の生活シーン・使用イメージ' },
+  { type:'detail',      icon:'🔍', name:'品質・信頼証明',     frame:'Trust',      desc:'素材・製法・こだわりのディテール' },
+  { type:'size',        icon:'📐', name:'スペック・サイズ',   frame:'Confidence', desc:'寸法・重量・比較で購入不安を払拭' },
+  { type:'summary',     icon:'🏁', name:'総まとめ・CTA',      frame:'Action',     desc:'全ベネフィットをまとめて購入後押し' },
+  { type:'usecase',     icon:'🎬', name:'使用シーン',         frame:'Usage',      desc:'具体的な使い方・シチュエーション' },
+  { type:'beforeafter', icon:'🔄', name:'Before / After',     frame:'Proof',      desc:'使用前後の変化で効果を証明' },
+  { type:'comparison',  icon:'⚖️', name:'競合比較表',         frame:'Compare',    desc:'他商品との違いを一目で伝える' },
+  { type:'howto',       icon:'📖', name:'使い方・手順',       frame:'How-to',     desc:'ステップで使い方をわかりやすく' },
+  { type:'ingredients', icon:'🧪', name:'成分・素材紹介',     frame:'Quality',    desc:'原材料・成分・素材のこだわりを訴求' },
 ];
+
+// デフォルト並び順（最大9枚）
+const allCarouselSteps = [
+  { num:1, ...allImageTypes[0] },
+  { num:2, ...allImageTypes[1] },
+  { num:3, ...allImageTypes[2] },
+  { num:4, ...allImageTypes[3] },
+  { num:5, ...allImageTypes[4] },
+  { num:6, ...allImageTypes[5] },
+  { num:7, ...allImageTypes[6] },
+  { num:8, ...allImageTypes[7] },
+  { num:9, ...allImageTypes[8] },
+];
+
+// 現在の選択状態（ユーザーが変更可能）
+let customCarouselSteps = allCarouselSteps.slice(0, 7).map(s => ({...s}));
+
 function renderCarouselTrack(n) {
   const track = document.getElementById('carouselTrack');
   if (!track) return;
-  const steps = allCarouselSteps.slice(0, n);
-  track.innerHTML = steps.map((s, i) =>
+
+  // 長さを合わせる
+  while (customCarouselSteps.length < n) {
+    const i = customCarouselSteps.length;
+    const base = allCarouselSteps[i] || { ...allImageTypes[7], num: i+1 };
+    customCarouselSteps.push({ ...base, num: i+1 });
+  }
+  customCarouselSteps = customCarouselSteps.slice(0, n).map((s,i) => ({...s, num:i+1}));
+
+  track.innerHTML = customCarouselSteps.map((s, i) =>
     `<div class="carousel-step${i===0?' active':''}" data-step="${s.num}" onclick="selectStep(this)">
       <div class="cs-num">画像${s.num}</div>
       <div class="cs-icon">${s.icon}</div>
       <div class="cs-name">${s.name}</div>
       <div class="cs-frame">${s.frame}</div>
+      <button class="cs-change-btn" onclick="event.stopPropagation(); openTypePicker(${i})">▼ 変更</button>
     </div>`
   ).join('');
+}
+
+// タイプピッカー
+let pickerTargetIdx = -1;
+function openTypePicker(idx) {
+  pickerTargetIdx = idx;
+  document.getElementById('pickerSlotNum').textContent = idx + 1;
+  const currentType = customCarouselSteps[idx].type;
+  const grid = document.getElementById('typePickerGrid');
+  grid.innerHTML = allImageTypes.map(t =>
+    `<div class="type-option${t.type === currentType ? ' selected' : ''}" onclick="selectImageType('${t.type}')">
+      <div class="to-icon">${t.icon}</div>
+      <div>
+        <div class="to-name">${t.name}</div>
+        <div class="to-frame">${t.frame} — ${t.desc}</div>
+      </div>
+    </div>`
+  ).join('');
+  document.getElementById('typePickerOverlay').classList.add('open');
+}
+
+function selectImageType(type) {
+  if (pickerTargetIdx < 0) return;
+  const chosen = allImageTypes.find(t => t.type === type);
+  if (!chosen) return;
+  customCarouselSteps[pickerTargetIdx] = {
+    ...chosen,
+    num: pickerTargetIdx + 1
+  };
+  closeTypePicker();
+  renderCarouselTrack(customCarouselSteps.length);
+}
+
+function closeTypePicker() {
+  document.getElementById('typePickerOverlay').classList.remove('open');
+  pickerTargetIdx = -1;
 }
 
 // ===== フレームワーク =====
@@ -1772,7 +1894,7 @@ function generateAllCarousel() {
   const refs     = refImages.filter(r => r.selected && r.note);
   const ctx = { name, color, size, features, scene, style, pain, gain, usp, emos, refs, fw: selectedFw };
 
-  const steps = allCarouselSteps.slice(0, selectedImageCount);
+  const steps = customCarouselSteps.slice(0, selectedImageCount);
 
   const container = document.getElementById('carouselResults');
   container.innerHTML = '';
