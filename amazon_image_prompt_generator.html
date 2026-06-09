@@ -420,6 +420,118 @@
   .flow-step .fs-label { font-weight: 700; color: var(--dark); }
   .flow-step .fs-sub { color: #888; font-size: 10px; margin-top: 2px; }
 
+  /* ===== ウィザード ===== */
+  .wizard-progress {
+    display: flex; align-items: center; background: white;
+    border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px;
+    margin-bottom: 18px; gap: 0;
+  }
+  .wz-step {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 4px; position: relative; cursor: pointer;
+  }
+  .wz-step + .wz-step::before {
+    content: ''; position: absolute; left: -50%; top: 16px;
+    width: 100%; height: 2px; background: var(--border); z-index: 0;
+  }
+  .wz-step.done + .wz-step::before { background: var(--orange); }
+  .wz-circle {
+    width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border);
+    background: white; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #aaa; z-index: 1;
+    transition: all 0.2s;
+  }
+  .wz-step.active .wz-circle { border-color: var(--orange); background: var(--orange); color: white; }
+  .wz-step.done .wz-circle { border-color: var(--orange); background: white; color: var(--orange); }
+  .wz-label { font-size: 10px; font-weight: 600; color: #aaa; text-align: center; }
+  .wz-step.active .wz-label, .wz-step.done .wz-label { color: var(--dark); }
+
+  .wizard-panel { display: none; }
+  .wizard-panel.active { display: block; }
+
+  .wizard-nav {
+    display: flex; gap: 10px; margin-top: 18px;
+  }
+  .btn-wz-next {
+    flex: 1; padding: 12px; background: var(--orange); color: white;
+    font-size: 14px; font-weight: 700; border: none; border-radius: 8px;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-wz-next:hover { background: #e68a00; }
+  .btn-wz-back {
+    padding: 12px 18px; background: white; color: #555;
+    font-size: 13px; font-weight: 600; border: 1px solid var(--border);
+    border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-wz-back:hover { background: #f5f5f5; }
+  .btn-wz-propose {
+    flex: 1; padding: 14px; background: var(--dark); color: white;
+    font-size: 15px; font-weight: 700; border: none; border-radius: 8px;
+    cursor: pointer; transition: background 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-wz-propose:hover { background: #374151; }
+
+  /* ===== 構成案カード ===== */
+  .composition-plans-area { margin-top: 18px; }
+  .composition-plans-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;
+  }
+  @media (max-width: 800px) { .composition-plans-grid { grid-template-columns: 1fr; } }
+
+  .plan-card {
+    background: white; border: 2px solid var(--border); border-radius: 10px;
+    padding: 16px; transition: all 0.2s; cursor: default;
+  }
+  .plan-card:hover { border-color: var(--orange); box-shadow: 0 2px 12px rgba(255,153,0,0.15); }
+  .plan-card.adopted { border-color: var(--orange); background: #fffbf5; }
+
+  .plan-card-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .plan-badge {
+    width: 32px; height: 32px; border-radius: 8px; background: var(--dark);
+    color: white; font-size: 14px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .plan-card.adopted .plan-badge { background: var(--orange); }
+  .plan-name { font-size: 13px; font-weight: 700; color: var(--dark); }
+  .plan-desc { font-size: 11px; color: #888; margin-top: 1px; }
+
+  .plan-slots {
+    display: flex; gap: 4px; flex-wrap: wrap; margin: 10px 0;
+  }
+  .plan-slot {
+    display: flex; flex-direction: column; align-items: center;
+    background: #f8f8f8; border: 1px solid #eee; border-radius: 6px;
+    padding: 5px 6px; min-width: 52px; text-align: center;
+  }
+  .plan-slot-num { font-size: 9px; color: #bbb; margin-bottom: 1px; }
+  .plan-slot-icon { font-size: 16px; line-height: 1; }
+  .plan-slot-name { font-size: 9px; font-weight: 600; color: #555; margin-top: 2px; line-height: 1.2; }
+
+  .btn-adopt-plan {
+    width: 100%; padding: 9px; margin-top: 10px;
+    background: white; border: 2px solid var(--dark); border-radius: 7px;
+    font-size: 12px; font-weight: 700; color: var(--dark); cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-adopt-plan:hover { background: var(--dark); color: white; }
+  .plan-card.adopted .btn-adopt-plan { background: var(--orange); border-color: var(--orange); color: white; }
+
+  /* 既存の詳細分析プロンプト（折りたたみ） */
+  .analysis-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; padding: 10px 14px; background: #f5f5f5;
+    border: 1px solid var(--border); border-radius: 8px; margin-top: 16px;
+    font-size: 12px; font-weight: 600; color: #555;
+  }
+  .analysis-toggle:hover { background: #eeeeee; }
+  .analysis-toggle .toggle-icon { transition: transform 0.2s; }
+  .analysis-toggle.open .toggle-icon { transform: rotate(180deg); }
+  .analysis-body { display: none; margin-top: 8px; }
+  .analysis-body.open { display: block; }
+
   /* 規約リスト */
   .rules-list { list-style: none; }
   .rules-list li { font-size: 12px; padding: 5px 0 5px 18px; border-bottom: 1px solid #f0f0f0; position: relative; color: #444; line-height: 1.5; }
@@ -944,49 +1056,48 @@
 <div id="tab-strategy" class="tab-content">
 <div class="container">
 
-  <!-- 使い方フロー -->
-  <div class="chatgpt-tip">
-    <strong>💡 使い方：</strong>
-    このタブで情報を入力 → プロンプトを生成 → ChatGPT（GPT-4o / ブラウジングON）に貼り付け＋商品画像を添付 → 販売戦略・競合分析・画像制作計画を受け取る
+  <!-- ウィザード進捗 -->
+  <div class="wizard-progress" id="wizardProgress">
+    <div class="wz-step active" id="wzStep1" onclick="goToStep(1)">
+      <div class="wz-circle">1</div><div class="wz-label">商品基本情報</div>
+    </div>
+    <div class="wz-step" id="wzStep2" onclick="goToStep(2)">
+      <div class="wz-circle">2</div><div class="wz-label">特徴・強み</div>
+    </div>
+    <div class="wz-step" id="wzStep3" onclick="goToStep(3)">
+      <div class="wz-circle">3</div><div class="wz-label">ターゲット</div>
+    </div>
+    <div class="wz-step" id="wzStep4" onclick="goToStep(4)">
+      <div class="wz-circle">4</div><div class="wz-label">競合情報</div>
+    </div>
+    <div class="wz-step" id="wzStep5" onclick="goToStep(5)">
+      <div class="wz-circle">5</div><div class="wz-label">画像設定</div>
+    </div>
   </div>
 
-  <div class="flow-steps">
-    <div class="flow-step"><span class="fs-icon">🖼️</span><div class="fs-label">商品画像をアップ</div><div class="fs-sub">自社商品の写真</div></div>
-    <div class="flow-step"><span class="fs-icon">📝</span><div class="fs-label">商品情報を記入</div><div class="fs-sub">特徴・ターゲット</div></div>
-    <div class="flow-step"><span class="fs-icon">🔗</span><div class="fs-label">競合URLを入力</div><div class="fs-sub">類似商品のURL</div></div>
-    <div class="flow-step"><span class="fs-icon">🔢</span><div class="fs-label">枚数を選ぶ</div><div class="fs-sub">1〜9枚</div></div>
-    <div class="flow-step"><span class="fs-icon">✨</span><div class="fs-label">構成案を生成</div><div class="fs-sub">3パターン提案</div></div>
-  </div>
+  <!-- STEP 1: 商品基本情報 -->
+  <div class="wizard-panel active card" id="wzPanel1">
+    <h2>📦 STEP 1 — 商品基本情報</h2>
 
-  <div class="grid-2">
-
-    <!-- A: 自社商品情報 -->
-    <div class="card strategy-section">
-      <div class="step-header">
-        <div class="step-num-badge">A</div>
-        <div class="step-title">自社商品情報</div>
-        <div class="step-sub">画像はChatGPTに直接添付してください</div>
+    <div class="field">
+      <label>商品画像をアップロード（複数可）</label>
+      <div class="product-upload-area" onclick="document.getElementById('strategyFileInput').click()" id="strategyDropZone">
+        <span style="font-size:28px; display:block; margin-bottom:6px;">📸</span>
+        商品写真をドロップ、またはクリックして選択<br>
+        <small style="color:#bbb;">JPG / PNG / WebP — ChatGPTへの添付にも使います</small>
       </div>
+      <input type="file" id="strategyFileInput" accept="image/*" multiple style="display:none;" onchange="handleStrategyImages(event)">
+      <div class="product-preview-grid" id="strategyPreviewGrid"></div>
+    </div>
 
+    <div class="grid-2">
       <div class="field">
-        <label>商品画像をアップロード（複数可）</label>
-        <div class="product-upload-area" onclick="document.getElementById('strategyFileInput').click()" id="strategyDropZone">
-          <span style="font-size:28px; display:block; margin-bottom:6px;">📸</span>
-          商品写真をドロップ、またはクリックして選択<br>
-          <small style="color:#bbb;">JPG / PNG / WebP — ここに表示してChatGPTに添付</small>
-        </div>
-        <input type="file" id="strategyFileInput" accept="image/*" multiple style="display:none;" onchange="handleStrategyImages(event)">
-        <div class="product-preview-grid" id="strategyPreviewGrid"></div>
+        <label>商品名・型番<span class="required">*</span></label>
+        <input type="text" id="strategyProductName" placeholder="例: ステンレスタンブラー 500ml シルバー" oninput="SD.productName=this.value">
       </div>
-
       <div class="field">
-        <label>商品名・型番</label>
-        <input type="text" id="strategyProductName" placeholder="例: ステンレスタンブラー 500ml シルバー">
-      </div>
-
-      <div class="field">
-        <label>商品カテゴリ</label>
-        <select id="strategyCategory">
+        <label>商品カテゴリ<span class="required">*</span></label>
+        <select id="strategyCategory" onchange="SD.category=this.value">
           <option value="">カテゴリを選択</option>
           <option value="サプリメント・健康食品">サプリメント・健康食品</option>
           <option value="美容・スキンケア">美容・スキンケア</option>
@@ -1002,161 +1113,216 @@
           <option value="その他">その他</option>
         </select>
       </div>
-
-      <div class="field">
-        <label>ターゲット客層<span class="required">*</span></label>
-        <div class="hint">誰に向けた商品か（年齢・性別・ライフスタイル・悩みなど）</div>
-        <textarea id="strategyTarget" style="min-height:70px;"
-          placeholder="例:&#10;・30〜40代の働く女性&#10;・毎朝コーヒーを飲む習慣がある&#10;・デスクでのランチを大切にしている&#10;・おしゃれなアイテムを好む"></textarea>
-      </div>
-
-      <div class="field">
-        <label>商品の使い方・主な特徴<span class="required">*</span></label>
-        <div class="hint">どんな場面で・どう使うか。機能・成分・素材など</div>
-        <textarea id="strategyUsage" style="min-height:90px;"
-          placeholder="例:&#10;・保温6時間・保冷8時間の真空二重断熱タンブラー&#10;・蓋が片手で開くワンタッチ設計&#10;・食洗機対応で洗いやすい&#10;・容量500ml"></textarea>
-      </div>
-
-      <div class="field">
-        <label>競合との差別化・自社の強み</label>
-        <div class="hint">競合商品と比べて何が優れているか・違うか</div>
-        <textarea id="strategyUsp" style="min-height:70px;"
-          placeholder="例:&#10;・競合は両手で蓋を開ける設計→自社はワンタッチ&#10;・同価格帯で最長保温時間&#10;・カラーバリエーション10色（競合は3色）"></textarea>
-      </div>
-
-      <div class="field">
-        <label>販売価格帯</label>
-        <input type="text" id="strategyPrice" placeholder="例: 2,980円（競合は1,500〜4,000円帯）">
-      </div>
-
-      <div class="field">
-        <label>現在の課題・悩み（任意）</label>
-        <textarea id="strategyChallenges" style="min-height:60px;"
-          placeholder="例:&#10;・販売開始したばかりでレビューがない&#10;・競合が多くて差別化が難しい"></textarea>
-      </div>
     </div>
 
-    <!-- B: 競合・レビュー情報 -->
-    <div class="card strategy-section">
-      <div class="step-header">
-        <div class="step-num-badge">B</div>
-        <div class="step-title">競合・類似商品の情報</div>
-        <div class="step-sub">URLはChatGPTがブラウジングで確認します</div>
-      </div>
-
-      <div class="field">
-        <label>競合商品のURL（最大5件）</label>
-        <div class="hint">Amazon 商品ページURL — ChatGPTがレビューも含めて分析します</div>
-        <div id="competitorList">
-          <div class="competitor-row">
-            <input type="text" class="competitor-url" placeholder="https://www.amazon.co.jp/dp/XXXXXXXXXX">
-            <button class="btn-sm btn-gray" onclick="removeCompetitor(this)" style="background:#f5f5f5; border:1px solid #ddd; color:#999;">✕</button>
-          </div>
-        </div>
-        <button class="btn-add-competitor" onclick="addCompetitor()">＋ 競合URLを追加</button>
-      </div>
-
-      <div class="field">
-        <label>気になるレビューを貼り付け（任意）</label>
-        <div class="hint">URLからChatGPTが読めない場合や、特定のレビューを強調したい場合に記入</div>
-        <div class="review-grid">
-          <div class="review-box positive">
-            <div class="review-box-header">⭐ 高評価レビュー（★4〜5）</div>
-            <textarea id="reviewPositive" placeholder="例:&#10;「毎朝これがないと始まらない。保温力が他と全然違う」&#10;「蓋が片手で開くのが本当に便利」"></textarea>
-          </div>
-          <div class="review-box negative">
-            <div class="review-box-header">😤 低評価レビュー（★1〜2）</div>
-            <textarea id="reviewNegative" placeholder="例:&#10;「3ヶ月で塗装が剥げた」&#10;「蓋が固くて子供が開けられない」&#10;「洗いにくい形状」"></textarea>
-          </div>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>レビュー収集プロンプト</label>
-        <div class="hint">競合URLを入力後にクリック → ChatGPTでレビューを収集 → 下に貼り付け</div>
-        <button class="btn-gen-review" onclick="generateReviewPrompt()">
-          ⭐ 競合レビュー収集プロンプトを生成する →
-        </button>
-        <div id="reviewPromptArea" style="display:none; margin-bottom:10px;">
-          <div class="strategy-prompt-text" id="reviewPromptText" style="background:#f9f9f9; border:1px solid #ddd; border-radius:6px; padding:10px; font-size:11px; max-height:160px; overflow-y:auto;"></div>
-          <button class="btn-copy" onclick="copyReviewPrompt()" id="btnCopyReviewPrompt" style="margin-top:6px;">コピー</button>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>分析してほしいこと（任意）</label>
-        <textarea id="strategyFocus" style="min-height:60px;"
-          placeholder="例:&#10;・競合より安い価格で差別化できるか&#10;・どのターゲット層に絞るべきか&#10;・どの訴求ポイントを画像で前面に出すべきか"></textarea>
-      </div>
+    <div class="field">
+      <label>販売価格帯</label>
+      <input type="text" id="strategyPrice" placeholder="例: 2,980円（競合は1,500〜4,000円帯）" oninput="SD.price=this.value">
     </div>
 
-  </div><!-- /grid-2 -->
-
-  <!-- 画像枚数セレクター -->
-  <div class="card" style="margin-bottom:4px;">
-    <h2>🔢 作成する画像枚数を選ぶ</h2>
-    <div class="img-count-selector" id="imgCountSelector">
-      <button class="img-count-btn" onclick="setImageCount(1)">1</button>
-      <button class="img-count-btn" onclick="setImageCount(2)">2</button>
-      <button class="img-count-btn" onclick="setImageCount(3)">3</button>
-      <button class="img-count-btn" onclick="setImageCount(4)">4</button>
-      <button class="img-count-btn" onclick="setImageCount(5)">5</button>
-      <button class="img-count-btn" onclick="setImageCount(6)">6</button>
-      <button class="img-count-btn active" onclick="setImageCount(7)">7</button>
-      <button class="img-count-btn" onclick="setImageCount(8)">8</button>
-      <button class="img-count-btn" onclick="setImageCount(9)">9</button>
+    <div class="field">
+      <label>現在の課題・状況（任意）</label>
+      <textarea id="strategyChallenges" style="min-height:60px;"
+        placeholder="例:&#10;・販売開始したばかりでレビューがない&#10;・競合が多くて差別化が難しい&#10;・どの画像を作ればよいか分からない"></textarea>
     </div>
-    <div class="img-count-note">💡 Amazon出品は最大9枚（メイン1枚 + サブ最大8枚）。初期ローンチは7枚が目安です。</div>
+
+    <div class="wizard-nav">
+      <button class="btn-wz-next" onclick="goToStep(2)">次へ → 特徴・強みを入力</button>
+    </div>
   </div>
 
-  <!-- 生成ボタン -->
-  <button class="btn-gen-strategy" onclick="generateStrategyPrompts()">
-    🏗️ 画像構成案を3パターン生成する →
-  </button>
+  <!-- STEP 2: 商品の特徴・強み -->
+  <div class="wizard-panel card" id="wzPanel2">
+    <h2>⭐ STEP 2 — 商品の特徴・強み</h2>
 
-  <!-- 出力エリア -->
-  <div id="strategyOutputArea" style="display:none;">
-    <div class="card" style="padding:0; overflow:hidden;">
-      <div class="strategy-output-tabs" id="strategyOutputTabs">
-        <div class="s-tab active" onclick="switchStrategyTab(0)">🏗️ 構成案Aパターン別</div>
-        <div class="s-tab" onclick="switchStrategyTab(1)">🔍 競合・差別化分析</div>
-        <div class="s-tab" id="sTabImgPlan" onclick="switchStrategyTab(2)">🖼️ 画像制作計画 <span id="sTabImgCount">7</span>枚</div>
-      </div>
-      <div class="strategy-output-panel active" id="sPanel0">
-        <div class="strategy-prompt-text strategy-empty" id="sText0">生成ボタンを押してください</div>
-        <button class="btn-copy" id="sCopy0" onclick="copyStrategyPrompt(0)" style="display:none; position:absolute; top:10px; right:10px;">コピー</button>
-      </div>
-      <div class="strategy-output-panel" id="sPanel1">
-        <div class="strategy-prompt-text strategy-empty" id="sText1">生成ボタンを押してください</div>
-        <button class="btn-copy" id="sCopy1" onclick="copyStrategyPrompt(1)" style="display:none; position:absolute; top:10px; right:10px;">コピー</button>
-      </div>
-      <div class="strategy-output-panel" id="sPanel2">
-        <div class="strategy-prompt-text strategy-empty" id="sText2">生成ボタンを押してください</div>
-        <button class="btn-copy" id="sCopy2" onclick="copyStrategyPrompt(2)" style="display:none; position:absolute; top:10px; right:10px;">コピー</button>
+    <div class="field">
+      <label>商品の使い方・主な特徴<span class="required">*</span></label>
+      <div class="hint">どんな場面で・どう使うか。機能・成分・素材など具体的に</div>
+      <textarea id="strategyUsage" style="min-height:100px;" oninput="SD.usage=this.value"
+        placeholder="例:&#10;・保温6時間・保冷8時間の真空二重断熱タンブラー&#10;・蓋が片手で開くワンタッチ設計（競合は両手必要）&#10;・食洗機対応で洗いやすい&#10;・容量500ml / 重量280g"></textarea>
+    </div>
+
+    <div class="field">
+      <label>競合との差別化・自社の強み（USP）</label>
+      <div class="hint">競合商品と比べて「これだけは負けない」ポイント</div>
+      <textarea id="strategyUsp" style="min-height:80px;" oninput="SD.usp=this.value"
+        placeholder="例:&#10;・業界最長12時間保温（競合平均6時間）&#10;・片手ワンタッチ開閉（競合は両手必要）&#10;・カラー10色展開（競合3色）"></textarea>
+    </div>
+
+    <div class="field">
+      <label>感情トリガー（複数選択可）</label>
+      <div class="hint">この商品はどんな感情・価値観に訴えかけるか</div>
+      <div class="emo-grid" id="emoGridWz">
+        <div class="emo-item" onclick="toggleEmoWz(this)" data-val="安心感・信頼">🛡️ 安心感・信頼</div>
+        <div class="emo-item" onclick="toggleEmoWz(this)" data-val="ステータス・上質さ">✨ ステータス・上質さ</div>
+        <div class="emo-item" onclick="toggleEmoWz(this)" data-val="時短・効率">⚡ 時短・効率</div>
+        <div class="emo-item" onclick="toggleEmoWz(this)" data-val="節約・コスパ">💰 節約・コスパ</div>
+        <div class="emo-item" onclick="toggleEmoWz(this)" data-val="健康・美しさ">💚 健康・美しさ</div>
+        <div class="emo-item" onclick="toggleEmoWz(this)" data-val="家族・絆">👨‍👩‍👧 家族・絆</div>
+        <div class="emo-item" onclick="toggleEmoWz(this)" data-val="冒険・アクティブ">🏔️ 冒険・アクティブ</div>
+        <div class="emo-item" onclick="toggleEmoWz(this)" data-val="プロ感・専門性">🎯 プロ感・専門性</div>
       </div>
     </div>
 
-    <!-- 構成案採用ボタン -->
-    <div class="composition-adopt-bar" id="adoptBar" style="display:none;">
-      <span class="adopt-label">📌 ChatGPTから受け取った構成案を採用する:</span>
-      <button class="btn-adopt" id="adoptBtnA" onclick="adoptComposition('A','問題解決型')">
-        構成案 A を採用
-        <span class="adopt-sub">問題解決型</span>
-      </button>
-      <button class="btn-adopt" id="adoptBtnB" onclick="adoptComposition('B','ライフスタイル訴求型')">
-        構成案 B を採用
-        <span class="adopt-sub">ライフスタイル訴求型</span>
-      </button>
-      <button class="btn-adopt" id="adoptBtnC" onclick="adoptComposition('C','競合差別化型')">
-        構成案 C を採用
-        <span class="adopt-sub">競合差別化型</span>
-      </button>
+    <div class="wizard-nav">
+      <button class="btn-wz-back" onclick="goToStep(1)">← 戻る</button>
+      <button class="btn-wz-next" onclick="goToStep(3)">次へ → ターゲットを入力</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: ターゲット -->
+  <div class="wizard-panel card" id="wzPanel3">
+    <h2>🎯 STEP 3 — ターゲット客層</h2>
+
+    <div class="field">
+      <label>ターゲット客層<span class="required">*</span></label>
+      <div class="hint">誰に向けた商品か（年齢・性別・ライフスタイル・状況など）</div>
+      <textarea id="strategyTarget" style="min-height:80px;" oninput="SD.target=this.value"
+        placeholder="例:&#10;・30〜40代の働く女性&#10;・毎朝コーヒーを飲む習慣がある&#10;・バッグに入れて通勤・外出する&#10;・デザインにこだわりを持つ"></textarea>
     </div>
 
-    <div class="tip" style="margin-top:12px;">
-      💡 <strong>使い方:</strong>
-      ① プロンプトをコピー → ChatGPT（GPT-4o + ブラウジングON）に貼り付け＋商品画像を添付 → 送信<br>
-      ② ChatGPTから3パターンの構成案が返ってきたら → 上の「採用する」ボタンでカルーセル戦略タブに反映
+    <div class="grid-2">
+      <div class="field">
+        <label>ターゲットの悩み・ペインポイント</label>
+        <div class="hint">購入前にどんな不満・不安を抱えているか</div>
+        <textarea id="strategyPain" style="min-height:80px;" oninput="SD.painPoint=this.value"
+          placeholder="例:&#10;・飲み物がすぐ冷める&#10;・バッグの中で漏れる&#10;・洗うのが面倒で不衛生になりがち"></textarea>
+      </div>
+      <div class="field">
+        <label>購入後の理想の状態</label>
+        <div class="hint">この商品で顧客が得たい「未来の姿」</div>
+        <textarea id="strategyGain" style="min-height:80px;" oninput="SD.desiredOutcome=this.value"
+          placeholder="例:&#10;・仕事中ずっと適温で飲める&#10;・外出先でもコーヒーを楽しめる&#10;・スタイリッシュなデスクになる"></textarea>
+      </div>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="btn-wz-back" onclick="goToStep(2)">← 戻る</button>
+      <button class="btn-wz-next" onclick="goToStep(4)">次へ → 競合情報を入力</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: 競合情報 -->
+  <div class="wizard-panel card" id="wzPanel4">
+    <h2>🔍 STEP 4 — 競合・レビュー情報（任意）</h2>
+    <div class="hint" style="margin-bottom:12px;">競合情報を入力すると、構成案の精度が上がります。スキップも可能です。</div>
+
+    <div class="field">
+      <label>競合商品のURL（最大5件）</label>
+      <div class="hint">Amazon商品ページURL — ChatGPTがレビューも含めて分析します</div>
+      <div id="competitorList">
+        <div class="competitor-row">
+          <input type="text" class="competitor-url" placeholder="https://www.amazon.co.jp/dp/XXXXXXXXXX">
+          <button class="btn-sm btn-gray" onclick="removeCompetitor(this)" style="background:#f5f5f5; border:1px solid #ddd; color:#999;">✕</button>
+        </div>
+      </div>
+      <button class="btn-add-competitor" onclick="addCompetitor()">＋ 競合URLを追加</button>
+    </div>
+
+    <div class="field">
+      <label>レビュー収集プロンプト</label>
+      <div class="hint">URLを入力後にクリック → ChatGPT（ブラウジングON）でレビューを収集 → 下に貼り付け</div>
+      <button class="btn-gen-review" onclick="generateReviewPrompt()">⭐ 競合レビュー収集プロンプトを生成 →</button>
+      <div id="reviewPromptArea" style="display:none; margin-bottom:10px;">
+        <div class="strategy-prompt-text" id="reviewPromptText" style="background:#f9f9f9; border:1px solid #ddd; border-radius:6px; padding:10px; font-size:11px; max-height:160px; overflow-y:auto;"></div>
+        <button class="btn-copy" onclick="copyReviewPrompt()" id="btnCopyReviewPrompt" style="margin-top:6px;">コピー</button>
+      </div>
+    </div>
+
+    <div class="review-grid">
+      <div class="review-box positive">
+        <div class="review-box-header">⭐ 高評価レビュー（★4〜5）貼り付け</div>
+        <textarea id="reviewPositive" placeholder="ChatGPTから収集したレビューや、手動でコピーしたレビューを貼り付け"></textarea>
+      </div>
+      <div class="review-box negative">
+        <div class="review-box-header">😤 低評価レビュー（★1〜2）貼り付け</div>
+        <textarea id="reviewNegative" placeholder="競合商品の不満レビューを貼り付け → 自社の差別化訴求に活用"></textarea>
+      </div>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="btn-wz-back" onclick="goToStep(3)">← 戻る</button>
+      <button class="btn-wz-next" onclick="goToStep(5)">次へ → 画像設定</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: 画像設定 -->
+  <div class="wizard-panel card" id="wzPanel5">
+    <h2>🔢 STEP 5 — 画像設定</h2>
+
+    <div class="field">
+      <label>作成する画像枚数</label>
+      <div class="img-count-selector" id="imgCountSelector">
+        <button class="img-count-btn" onclick="setImageCount(1)">1</button>
+        <button class="img-count-btn" onclick="setImageCount(2)">2</button>
+        <button class="img-count-btn" onclick="setImageCount(3)">3</button>
+        <button class="img-count-btn" onclick="setImageCount(4)">4</button>
+        <button class="img-count-btn" onclick="setImageCount(5)">5</button>
+        <button class="img-count-btn" onclick="setImageCount(6)">6</button>
+        <button class="img-count-btn active" onclick="setImageCount(7)">7</button>
+        <button class="img-count-btn" onclick="setImageCount(8)">8</button>
+        <button class="img-count-btn" onclick="setImageCount(9)">9</button>
+      </div>
+      <div class="img-count-note">💡 Amazon出品は最大9枚（メイン1枚+サブ8枚）。初期ローンチは7枚が目安。</div>
+    </div>
+
+    <div class="field" style="margin-top:14px;">
+      <label>セールスライティングの戦略フレームワーク</label>
+      <div class="fw-selector">
+        <button class="fw-btn active-fab" id="fw-fab2" onclick="selectFwWz('fab')">FAB <span style="font-weight:400;font-size:10px;">特徴→優位性→恩恵</span></button>
+        <button class="fw-btn" id="fw-pas2"  onclick="selectFwWz('pas')">PAS <span style="font-weight:400;font-size:10px;">悩み→共感→解決</span></button>
+        <button class="fw-btn" id="fw-aida2" onclick="selectFwWz('aida')">AIDA <span style="font-weight:400;font-size:10px;">注意→関心→欲求→行動</span></button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>追加で考慮してほしいこと（任意）</label>
+      <textarea id="strategyFocus" style="min-height:60px;"
+        placeholder="例:&#10;・季節・イベントに合わせた訴求をしたい（夏向け、ギフト向けなど）&#10;・特定の競合に勝ちたい&#10;・価格訴求よりも品質・ブランド訴求したい"></textarea>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="btn-wz-back" onclick="goToStep(4)">← 戻る</button>
+      <button class="btn-wz-propose" onclick="proposeCompositions()">✨ 画像構成案を提案する →</button>
+    </div>
+  </div>
+
+  <!-- 構成案提案エリア -->
+  <div id="compositionProposalArea" style="display:none; margin-top:18px;">
+    <div class="card">
+      <h2>🏗️ 画像構成案 — <span id="proposalCountLabel">4</span>パターンの提案</h2>
+      <div class="hint" style="margin-bottom:4px;">入力した情報をもとに構成案を提案します。気に入ったものを「採用する」ボタンでカルーセル戦略タブに反映できます。</div>
+    </div>
+    <div class="composition-plans-grid" id="compositionPlansGrid"></div>
+
+    <!-- 競合分析プロンプト（折りたたみ） -->
+    <div class="analysis-toggle" id="analysisToggle" onclick="toggleAnalysis()">
+      <span>🔍 ChatGPTで競合・詳細分析も行う（URLを入力した場合）</span>
+      <span class="toggle-icon">▼</span>
+    </div>
+    <div class="analysis-body" id="analysisBody">
+      <div class="card" style="padding:0; overflow:hidden; margin-top:0; border-top:none; border-radius:0 0 8px 8px;">
+        <div class="strategy-output-tabs">
+          <div class="s-tab active" onclick="switchStrategyTab(0)">📊 総合戦略</div>
+          <div class="s-tab" onclick="switchStrategyTab(1)">🔍 競合分析</div>
+          <div class="s-tab" id="sTabImgPlan" onclick="switchStrategyTab(2)">🖼️ 制作計画 <span id="sTabImgCount">7</span>枚</div>
+        </div>
+        <div class="strategy-output-panel active" id="sPanel0">
+          <div class="strategy-prompt-text strategy-empty" id="sText0">「構成案を提案する」ボタンを押すと生成されます</div>
+          <button class="btn-copy" id="sCopy0" onclick="copyStrategyPrompt(0)" style="display:none; position:absolute; top:10px; right:10px;">コピー</button>
+        </div>
+        <div class="strategy-output-panel" id="sPanel1">
+          <div class="strategy-prompt-text strategy-empty" id="sText1">「構成案を提案する」ボタンを押すと生成されます</div>
+          <button class="btn-copy" id="sCopy1" onclick="copyStrategyPrompt(1)" style="display:none; position:absolute; top:10px; right:10px;">コピー</button>
+        </div>
+        <div class="strategy-output-panel" id="sPanel2">
+          <div class="strategy-prompt-text strategy-empty" id="sText2">「構成案を提案する」ボタンを押すと生成されます</div>
+          <button class="btn-copy" id="sCopy2" onclick="copyStrategyPrompt(2)" style="display:none; position:absolute; top:10px; right:10px;">コピー</button>
+        </div>
+      </div>
+      <div class="tip" style="margin-top:8px;">
+        💡 プロンプトをコピー → ChatGPT（GPT-4o + ブラウジングON）に貼り付け＋商品画像を添付 → 詳細な競合分析を受け取る
+      </div>
     </div>
   </div>
 
@@ -1230,6 +1396,8 @@
 <script>
 // ===== タブ =====
 // ===== 共有データストア =====
+let selectedImageCount = 7;
+let strategyImages = [];
 const SD = {
   productName: '', category: '', target: '', usage: '',
   usp: '', price: '', painPoint: '', imageCount: 7,
@@ -1239,12 +1407,14 @@ const SD = {
 // 現在のタブのデータを SD に保存
 function saveTabData(name) {
   if (name === 'strategy') {
-    SD.productName = document.getElementById('strategyProductName').value.trim();
-    SD.category    = document.getElementById('strategyCategory').value;
-    SD.target      = document.getElementById('strategyTarget').value.trim();
-    SD.usage       = document.getElementById('strategyUsage').value.trim();
-    SD.usp         = document.getElementById('strategyUsp').value.trim();
-    SD.price       = document.getElementById('strategyPrice').value.trim();
+    SD.productName    = document.getElementById('strategyProductName').value.trim();
+    SD.category       = document.getElementById('strategyCategory').value;
+    SD.target         = document.getElementById('strategyTarget').value.trim();
+    SD.usage          = document.getElementById('strategyUsage').value.trim();
+    SD.usp            = document.getElementById('strategyUsp').value.trim();
+    SD.price          = document.getElementById('strategyPrice').value.trim();
+    SD.painPoint      = (document.getElementById('strategyPain') || {value:''}).value.trim() || SD.painPoint;
+    SD.desiredOutcome = (document.getElementById('strategyGain') || {value:''}).value.trim() || SD.desiredOutcome;
   } else if (name === 'generate') {
     SD.productName = document.getElementById('productName').value.trim();
     SD.usp         = document.getElementById('usp').value.trim();
@@ -2187,9 +2357,150 @@ function toggleRef(id) { const i=refImages.find(r=>r.id===id); if(i){i.selected=
 function deleteRef(id) { refImages=refImages.filter(r=>r.id!==id); renderGallery(); }
 function updateNote(id,v) { const i=refImages.find(r=>r.id===id); if(i) i.note=v; }
 
-// ===== 販売戦略タブ =====
-let strategyImages = [];
-let selectedImageCount = 7;
+// ===== ウィザード =====
+let currentWizardStep = 1;
+
+function goToStep(n) {
+  // バリデーション（必須項目）
+  if (n > 1 && !document.getElementById('strategyProductName').value.trim()) {
+    alert('商品名を入力してください。'); goToStep(1); return;
+  }
+  if (n > 2 && !document.getElementById('strategyUsage').value.trim()) {
+    alert('商品の特徴・使い方を入力してください。'); goToStep(2); return;
+  }
+  if (n > 3 && !document.getElementById('strategyTarget').value.trim()) {
+    alert('ターゲット客層を入力してください。'); goToStep(3); return;
+  }
+
+  currentWizardStep = n;
+  // パネル切り替え
+  for (let i = 1; i <= 5; i++) {
+    const panel = document.getElementById('wzPanel'+i);
+    if (panel) panel.classList.toggle('active', i === n);
+  }
+  // ステップインジケーター更新
+  for (let i = 1; i <= 5; i++) {
+    const step = document.getElementById('wzStep'+i);
+    if (!step) continue;
+    step.classList.remove('active','done');
+    if (i === n) step.classList.add('active');
+    else if (i < n) step.classList.add('done');
+  }
+  // SDに保存
+  saveTabData('strategy');
+  window.scrollTo({ top: document.getElementById('wizardProgress').offsetTop - 60, behavior: 'smooth' });
+}
+
+function selectFwWz(fw) {
+  selectedFw = fw;
+  // ウィザードタブのボタン
+  ['fab','pas','aida'].forEach(f => {
+    const btn = document.getElementById('fw-'+f+'2');
+    if (btn) btn.className = 'fw-btn' + (f===fw ? ' active-'+f : '');
+  });
+  // プロンプト生成タブのボタンも同期
+  ['fab','pas','aida'].forEach(f => {
+    const btn = document.getElementById('fw-'+f);
+    if (btn) btn.className = 'fw-btn' + (f===fw ? ' active-'+f : '');
+  });
+}
+function toggleEmoWz(el) { el.classList.toggle('checked'); }
+function getSelectedEmosWz() {
+  return Array.from(document.querySelectorAll('#emoGridWz .emo-item.checked')).map(e => e.dataset.val);
+}
+
+function toggleAnalysis() {
+  const toggle = document.getElementById('analysisToggle');
+  const body   = document.getElementById('analysisBody');
+  toggle.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+// ===== 構成案の提案（ツール内で直接生成）=====
+const compositionTemplates = [
+  {
+    pattern: 'A', name: '問題解決型', icon: '💥',
+    desc: '顧客の悩みに共感してから解決策として商品を提示。PAS戦略に最適。',
+    types: ['main','pain_shot','benefit','lifestyle','detail','size','summary','usecase','beforeafter'],
+  },
+  {
+    pattern: 'B', name: 'ライフスタイル訴求型', icon: '🌿',
+    desc: '理想の生活シーンを前面に出して「欲しい」と思わせる。ビジュアル重視の商品に最適。',
+    types: ['main','lifestyle','benefit','usecase','detail','size','summary','pain_shot','beforeafter'],
+  },
+  {
+    pattern: 'C', name: '競合差別化型', icon: '⚖️',
+    desc: '競合との違いを明確に示し「なぜこれを選ぶか」を伝える。市場競争が激しい場合に効果的。',
+    types: ['main','comparison','benefit','beforeafter','lifestyle','detail','summary','size','usecase'],
+  },
+  {
+    pattern: 'D', name: 'ブランド品質型', icon: '🏆',
+    desc: '素材・製法・こだわりを前面に出してプレミアム感を演出。高価格帯・品質訴求商品に最適。',
+    types: ['main','ingredients','howto','lifestyle','benefit','detail','summary','comparison','usecase'],
+  },
+];
+
+function proposeCompositions() {
+  const n = selectedImageCount;
+  // SDに最新情報を保存
+  saveTabData('strategy');
+
+  const grid = document.getElementById('compositionPlansGrid');
+  grid.innerHTML = compositionTemplates.map(tmpl => buildPlanCard(tmpl, n)).join('');
+
+  // ChatGPT用詳細分析プロンプトも生成（折りたたみ内）
+  generateStrategyPrompts();
+
+  document.getElementById('proposalCountLabel').textContent = compositionTemplates.length;
+  document.getElementById('compositionProposalArea').style.display = 'block';
+  document.getElementById('compositionProposalArea').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function buildPlanCard(tmpl, n) {
+  const slots = tmpl.types.slice(0, n).map((type, i) => {
+    const t = allImageTypes.find(x => x.type === type) || allImageTypes[0];
+    return `<div class="plan-slot">
+      <div class="plan-slot-num">${i+1}</div>
+      <div class="plan-slot-icon">${t.icon}</div>
+      <div class="plan-slot-name">${t.name.replace('ヒーローショット','ヒーロー').replace('ベネフィット訴求','ベネフィット').replace('品質・信頼証明','品質証明').replace('スペック・サイズ','スペック').replace('総まとめ・CTA','まとめ').replace('Before / After','B/A').replace('競合比較表','比較').replace('使い方・手順','手順').replace('成分・素材紹介','成分')}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="plan-card" id="planCard${tmpl.pattern}">
+    <div class="plan-card-header">
+      <div class="plan-badge">${tmpl.pattern}</div>
+      <div>
+        <div class="plan-name">${tmpl.icon} ${tmpl.name}</div>
+        <div class="plan-desc">${tmpl.desc}</div>
+      </div>
+    </div>
+    <div class="plan-slots">${slots}</div>
+    <button class="btn-adopt-plan" onclick="adoptPlan('${tmpl.pattern}','${tmpl.name}',${JSON.stringify(tmpl.types.slice(0,n))})">
+      この構成案を採用してカルーセルを設定する →
+    </button>
+  </div>`;
+}
+
+function adoptPlan(pattern, name, types) {
+  // カスタムカルーセルステップを更新
+  customCarouselSteps = types.map((type, i) => {
+    const t = allImageTypes.find(x => x.type === type) || allImageTypes[0];
+    return { ...t, num: i+1 };
+  });
+
+  // 採用中フラグをセット
+  SD.adoptedComposition = { pattern, name };
+
+  // 全カードのスタイルを更新
+  compositionTemplates.forEach(tmpl => {
+    const card = document.getElementById('planCard'+tmpl.pattern);
+    if (card) card.classList.toggle('adopted', tmpl.pattern === pattern);
+  });
+
+  // カルーセルタブへ移動
+  switchTab('carousel');
+  renderCarouselTrack(types.length);
+}
 
 function setImageCount(n) { setImageCountAll(n); }
 
@@ -2514,8 +2825,9 @@ ${imgRoles.map((r, i) => `### 【${r}】
   // SDに商品情報を保存
   saveTabData('strategy');
 
-  document.getElementById('strategyOutputArea').style.display = 'block';
-  document.getElementById('strategyOutputArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // 分析エリアを展開（折りたたみ内）
+  const analysisBody = document.getElementById('analysisBody');
+  if (analysisBody) { analysisBody.classList.add('open'); document.getElementById('analysisToggle').classList.add('open'); }
   switchStrategyTab(0);
 }
 </script>
