@@ -319,6 +319,42 @@
   .c-tab.active { color: var(--orange); border-bottom-color: var(--orange); background: #fffbf5; }
   .c-tab:hover:not(.active) { background: #f9f9f9; color: var(--dark); }
 
+  /* 構成案採用ボタン */
+  .composition-adopt-bar {
+    display: flex; gap: 10px; padding: 14px 16px; background: #f8f8f8;
+    border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px;
+    flex-wrap: wrap; align-items: center;
+  }
+  .composition-adopt-bar .adopt-label { font-size: 12px; font-weight: 700; color: #555; flex-shrink: 0; }
+  .btn-adopt {
+    flex: 1; min-width: 120px; padding: 10px 12px; border: 2px solid var(--border);
+    border-radius: 8px; background: white; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; color: #444;
+  }
+  .btn-adopt:hover { border-color: var(--orange); color: var(--orange); background: #fffbf5; }
+  .btn-adopt.adopted { background: var(--orange); border-color: var(--orange); color: white; }
+  .btn-adopt .adopt-sub { font-size: 10px; font-weight: 400; display: block; margin-top: 2px; opacity: 0.8; }
+
+  /* カルーセルタブ：採用構成案バナー */
+  .adopted-plan-banner {
+    background: linear-gradient(135deg, #fff8f0, #fff3e0);
+    border: 2px solid var(--orange); border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 16px; display: none;
+  }
+  .adopted-plan-banner.visible { display: flex; align-items: center; gap: 12px; }
+  .adopted-plan-banner .apb-icon { font-size: 24px; }
+  .adopted-plan-banner .apb-title { font-size: 13px; font-weight: 700; color: var(--dark); }
+  .adopted-plan-banner .apb-sub { font-size: 11px; color: #888; margin-top: 2px; }
+  .adopted-plan-banner .apb-clear { margin-left: auto; font-size: 11px; color: #aaa; cursor: pointer; text-decoration: underline; }
+
+  /* 同期インジケーター */
+  .sync-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; color: var(--success); font-weight: 600;
+    background: #f0fff4; border: 1px solid #a9dfbf; border-radius: 10px;
+    padding: 2px 8px; margin-left: 8px; vertical-align: middle;
+  }
+
   .chatgpt-tip {
     background: #F0FFF4; border: 1px solid #A9DFBF; border-radius: 8px;
     padding: 12px 16px; font-size: 12px; color: #1E8449; margin-bottom: 14px;
@@ -448,7 +484,7 @@
 
 <div class="tabs">
   <div class="tab active"  onclick="switchTab('generate')">プロンプト生成</div>
-  <div class="tab"         onclick="switchTab('carousel')">カルーセル戦略 7枚</div>
+  <div class="tab"         onclick="switchTab('carousel')" id="tabCarouselLabel">カルーセル戦略 <span id="tabCarouselCount">7</span>枚</div>
   <div class="tab"         onclick="switchTab('reference')">参考画像ボード</div>
   <div class="tab"         onclick="switchTab('strategy')">販売戦略コンサルト</div>
   <div class="tab"         onclick="switchTab('rules')">Amazon 規約</div>
@@ -461,7 +497,7 @@
 
   <!-- 商品情報 -->
   <div class="card">
-    <h2>① 商品情報</h2>
+    <h2>① 商品情報 <span class="sync-badge" id="syncBadge" style="display:none;">🔗 販売戦略から引継ぎ済み</span></h2>
     <div class="field">
       <label>商品名<span class="required">*</span></label>
       <input type="text" id="productName" placeholder="例: ステンレス製タンブラー 500ml">
@@ -727,15 +763,41 @@
 </div><!-- /container -->
 </div><!-- /tab-generate -->
 
-<!-- ===== タブ2: カルーセル戦略 7枚 ===== -->
+<!-- ===== タブ2: カルーセル戦略 ===== -->
 <div id="tab-carousel" class="tab-content">
 <div class="container">
 
+  <!-- 採用中の構成案バナー -->
+  <div class="adopted-plan-banner" id="adoptedPlanBanner">
+    <div class="apb-icon">🏗️</div>
+    <div>
+      <div class="apb-title">採用中の構成案: <span id="adoptedPlanName">—</span></div>
+      <div class="apb-sub">販売戦略コンサルトで選択した構成案を元に生成します</div>
+    </div>
+    <span class="apb-clear" onclick="clearAdoptedPlan()">解除</span>
+  </div>
+
   <div class="card" style="margin-bottom:18px;">
-    <h2>🛒 カルーセル戦略 — 7枚で購買ストーリーを設計する</h2>
+    <h2>🛒 カルーセル戦略 — 購買ストーリーを設計する</h2>
     <div class="tip-orange" style="margin-bottom:14px;">
-      <strong>AIDA × セールスライティング:</strong> Amazon の商品カルーセルは「7枚の連続ストーリー」です。
-      1枚目でクリックさせ（Attention）、2〜4枚目で欲しいと思わせ（Interest/Desire）、最後に購入に踏み切らせます（Action）。
+      <strong>AIDA × セールスライティング:</strong> Amazon の商品カルーセルは「複数枚の連続ストーリー」です。
+      1枚目でクリックさせ（Attention）、中盤で欲しいと思わせ（Interest/Desire）、最後に購入に踏み切らせます（Action）。
+    </div>
+
+    <!-- 枚数セレクター -->
+    <div class="field" style="margin-bottom:14px;">
+      <label>画像枚数 <span class="sync-badge">🔗 販売戦略と連動</span></label>
+      <div class="img-count-selector" id="carouselCountSelector">
+        <button class="img-count-btn" onclick="setImageCountAll(1)">1</button>
+        <button class="img-count-btn" onclick="setImageCountAll(2)">2</button>
+        <button class="img-count-btn" onclick="setImageCountAll(3)">3</button>
+        <button class="img-count-btn" onclick="setImageCountAll(4)">4</button>
+        <button class="img-count-btn" onclick="setImageCountAll(5)">5</button>
+        <button class="img-count-btn" onclick="setImageCountAll(6)">6</button>
+        <button class="img-count-btn active" onclick="setImageCountAll(7)">7</button>
+        <button class="img-count-btn" onclick="setImageCountAll(8)">8</button>
+        <button class="img-count-btn" onclick="setImageCountAll(9)">9</button>
+      </div>
     </div>
 
     <div class="carousel-track" id="carouselTrack">
@@ -772,7 +834,7 @@
     <div style="margin-top:16px;">
       <div class="tip">💡 「商品名・ペインポイント・ゴール」をプロンプト生成タブで入力してから、下のボタンで全7枚を一括生成できます。</div>
     </div>
-    <button class="carousel-gen-btn" onclick="generateAllCarousel()">全7枚のプロンプトを一括生成 →</button>
+    <button class="carousel-gen-btn" id="carouselGenBtn" onclick="generateAllCarousel()">全 <span id="carouselGenCount">7</span> 枚のプロンプトを一括生成 →</button>
   </div>
 
   <div id="carouselResults" class="carousel-results"></div>
@@ -1029,10 +1091,27 @@
       </div>
     </div>
 
+    <!-- 構成案採用ボタン -->
+    <div class="composition-adopt-bar" id="adoptBar" style="display:none;">
+      <span class="adopt-label">📌 ChatGPTから受け取った構成案を採用する:</span>
+      <button class="btn-adopt" id="adoptBtnA" onclick="adoptComposition('A','問題解決型')">
+        構成案 A を採用
+        <span class="adopt-sub">問題解決型</span>
+      </button>
+      <button class="btn-adopt" id="adoptBtnB" onclick="adoptComposition('B','ライフスタイル訴求型')">
+        構成案 B を採用
+        <span class="adopt-sub">ライフスタイル訴求型</span>
+      </button>
+      <button class="btn-adopt" id="adoptBtnC" onclick="adoptComposition('C','競合差別化型')">
+        構成案 C を採用
+        <span class="adopt-sub">競合差別化型</span>
+      </button>
+    </div>
+
     <div class="tip" style="margin-top:12px;">
-      💡 <strong>ChatGPT での使い方:</strong>
-      上のプロンプトをコピー → ChatGPT の新しい会話に貼り付け → 商品画像ファイルも一緒に添付 → 送信
-      （GPT-4o + ブラウジングON 推奨）
+      💡 <strong>使い方:</strong>
+      ① プロンプトをコピー → ChatGPT（GPT-4o + ブラウジングON）に貼り付け＋商品画像を添付 → 送信<br>
+      ② ChatGPTから3パターンの構成案が返ってきたら → 上の「採用する」ボタンでカルーセル戦略タブに反映
     </div>
   </div>
 
@@ -1095,12 +1174,157 @@
 
 <script>
 // ===== タブ =====
+// ===== 共有データストア =====
+const SD = {
+  productName: '', category: '', target: '', usage: '',
+  usp: '', price: '', painPoint: '', imageCount: 7,
+  adoptedComposition: null // { pattern:'A'|'B'|'C', name:'...' }
+};
+
+// 現在のタブのデータを SD に保存
+function saveTabData(name) {
+  if (name === 'strategy') {
+    SD.productName = document.getElementById('strategyProductName').value.trim();
+    SD.category    = document.getElementById('strategyCategory').value;
+    SD.target      = document.getElementById('strategyTarget').value.trim();
+    SD.usage       = document.getElementById('strategyUsage').value.trim();
+    SD.usp         = document.getElementById('strategyUsp').value.trim();
+    SD.price       = document.getElementById('strategyPrice').value.trim();
+  } else if (name === 'generate') {
+    SD.productName = document.getElementById('productName').value.trim();
+    SD.usp         = document.getElementById('usp').value.trim();
+    SD.usage       = document.getElementById('features').value.trim();
+    SD.painPoint   = document.getElementById('painPoint').value.trim();
+  }
+}
+
+// SD のデータを指定タブのフィールドに反映
+function loadTabData(name) {
+  if (name === 'generate' && (SD.productName || SD.usp || SD.usage)) {
+    if (SD.productName) document.getElementById('productName').value = SD.productName;
+    if (SD.usp)         document.getElementById('usp').value = SD.usp;
+    if (SD.usage)       document.getElementById('features').value = SD.usage;
+    if (SD.painPoint)   document.getElementById('painPoint').value = SD.painPoint;
+    const badge = document.getElementById('syncBadge');
+    if (badge && SD.productName) badge.style.display = 'inline-flex';
+  } else if (name === 'strategy' && (SD.productName || SD.usage)) {
+    if (SD.productName) document.getElementById('strategyProductName').value = SD.productName;
+    if (SD.category)    document.getElementById('strategyCategory').value = SD.category;
+    if (SD.target)      document.getElementById('strategyTarget').value = SD.target;
+    if (SD.usage)       document.getElementById('strategyUsage').value = SD.usage;
+    if (SD.usp)         document.getElementById('strategyUsp').value = SD.usp;
+    if (SD.price)       document.getElementById('strategyPrice').value = SD.price;
+  } else if (name === 'carousel') {
+    // 枚数セレクターを同期
+    refreshCarouselCountUI();
+    // 採用バナー更新
+    refreshAdoptedBanner();
+  }
+}
+
 function switchTab(name) {
+  // 現在のアクティブタブのデータを保存
+  const active = document.querySelector('.tab-content.active');
+  if (active) {
+    const cur = active.id.replace('tab-', '');
+    saveTabData(cur);
+  }
   const names = ['generate','carousel','reference','strategy','rules'];
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i]===name));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
-  if (name==='generate') updateSelectedRefsBar();
+  if (name==='generate') { updateSelectedRefsBar(); loadTabData('generate'); }
+  if (name==='carousel') loadTabData('carousel');
+  if (name==='strategy') loadTabData('strategy');
+}
+
+// 画像枚数を全箇所で同期更新
+function setImageCountAll(n) {
+  selectedImageCount = n;
+  // 販売戦略タブのボタン
+  document.querySelectorAll('#imgCountSelector .img-count-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i + 1 === n);
+  });
+  // カルーセルタブのボタン
+  document.querySelectorAll('#carouselCountSelector .img-count-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i + 1 === n);
+  });
+  // タブラベル
+  const tl = document.getElementById('tabCarouselCount');
+  if (tl) tl.textContent = n;
+  // カルーセル生成ボタン
+  const cg = document.getElementById('carouselGenCount');
+  if (cg) cg.textContent = n;
+  // 戦略タブのカウント表示
+  const si = document.getElementById('sTabImgCount');
+  if (si) si.textContent = n;
+  SD.imageCount = n;
+  // カルーセルトラックを再描画
+  renderCarouselTrack(n);
+}
+
+// カルーセルタブの枚数UIを現在の選択に合わせる
+function refreshCarouselCountUI() {
+  setImageCountAll(selectedImageCount);
+}
+
+// 構成案を採用する
+function adoptComposition(pattern, planName) {
+  SD.adoptedComposition = { pattern, name: planName };
+  // ボタンのスタイル更新
+  ['A','B','C'].forEach(p => {
+    const btn = document.getElementById('adoptBtn'+p);
+    if (btn) btn.classList.toggle('adopted', p === pattern);
+  });
+  // カルーセルタブへ切り替え
+  switchTab('carousel');
+}
+
+function refreshAdoptedBanner() {
+  const banner = document.getElementById('adoptedPlanBanner');
+  const nameEl = document.getElementById('adoptedPlanName');
+  if (!banner || !nameEl) return;
+  if (SD.adoptedComposition) {
+    nameEl.textContent = `${SD.adoptedComposition.pattern}（${SD.adoptedComposition.name}）— ${selectedImageCount}枚`;
+    banner.classList.add('visible');
+  } else {
+    banner.classList.remove('visible');
+  }
+}
+
+function clearAdoptedPlan() {
+  SD.adoptedComposition = null;
+  ['A','B','C'].forEach(p => {
+    const btn = document.getElementById('adoptBtn'+p);
+    if (btn) btn.classList.remove('adopted');
+  });
+  refreshAdoptedBanner();
+}
+
+// カルーセルトラックを動的に描画
+const allCarouselSteps = [
+  { num:1, icon:'🎯', name:'ヒーローショット',   frame:'Attention',  type:'main' },
+  { num:2, icon:'💥', name:'ペイン共感',         frame:'Problem',    type:'pain_shot' },
+  { num:3, icon:'⭐', name:'主要ベネフィット',   frame:'Interest',   type:'benefit' },
+  { num:4, icon:'🌿', name:'ライフスタイル',     frame:'Desire',     type:'lifestyle' },
+  { num:5, icon:'🔍', name:'品質・信頼証明',     frame:'Trust',      type:'detail' },
+  { num:6, icon:'📐', name:'スペック・比較',     frame:'Confidence', type:'size' },
+  { num:7, icon:'🏁', name:'総まとめ・CTA',      frame:'Action',     type:'summary' },
+  { num:8, icon:'🎬', name:'使用シーン',         frame:'Usage',      type:'usecase' },
+  { num:9, icon:'🔄', name:'Before/After',       frame:'Proof',      type:'beforeafter' },
+];
+function renderCarouselTrack(n) {
+  const track = document.getElementById('carouselTrack');
+  if (!track) return;
+  const steps = allCarouselSteps.slice(0, n);
+  track.innerHTML = steps.map((s, i) =>
+    `<div class="carousel-step${i===0?' active':''}" data-step="${s.num}" onclick="selectStep(this)">
+      <div class="cs-num">画像${s.num}</div>
+      <div class="cs-icon">${s.icon}</div>
+      <div class="cs-name">${s.name}</div>
+      <div class="cs-frame">${s.frame}</div>
+    </div>`
+  ).join('');
 }
 
 // ===== フレームワーク =====
@@ -1119,6 +1343,8 @@ function selectFw(fw) {
   document.getElementById('fwExplain').textContent = fwExplains[fw];
 }
 selectFw('fab');
+// 初期カルーセルトラックを描画
+renderCarouselTrack(7);
 
 // ===== 感情トリガー =====
 function toggleEmo(el) { el.classList.toggle('checked'); }
@@ -1516,33 +1742,48 @@ function copyVarPrompt(btn, varId) {
 
 // ===== 全7枚カルーセル生成 =====
 function generateAllCarousel() {
-  const name = document.getElementById('productName').value.trim();
-  if (!name) { alert('先に「プロンプト生成」タブで商品名を入力してください。'); return; }
+  // まず販売戦略タブのデータをSDに同期
+  saveTabData('strategy');
+
+  // 商品名は プロンプト生成タブ or SD から取得
+  const name = document.getElementById('productName').value.trim() || SD.productName;
+  if (!name) { alert('先に「プロンプト生成」タブまたは「販売戦略コンサルト」タブで商品名を入力してください。'); return; }
+
+  // プロンプト生成タブのフィールドをSDで補完
+  if (SD.productName && !document.getElementById('productName').value.trim()) {
+    document.getElementById('productName').value = SD.productName;
+  }
+  if (SD.usp && !document.getElementById('usp').value.trim()) {
+    document.getElementById('usp').value = SD.usp;
+  }
+  if (SD.usage && !document.getElementById('features').value.trim()) {
+    document.getElementById('features').value = SD.usage;
+  }
 
   const color    = document.getElementById('colorMaterial').value.trim();
   const size     = document.getElementById('sizeShape').value.trim();
-  const features = document.getElementById('features').value.trim();
+  const features = document.getElementById('features').value.trim() || SD.usage;
   const scene    = document.getElementById('scene').value.trim();
   const style    = document.getElementById('style').value;
-  const pain     = document.getElementById('painPoint').value.trim();
+  const pain     = document.getElementById('painPoint').value.trim() || SD.painPoint;
   const gain     = document.getElementById('desiredOutcome').value.trim();
-  const usp      = document.getElementById('usp').value.trim();
+  const usp      = document.getElementById('usp').value.trim() || SD.usp;
   const emos     = getSelectedEmos();
   const refs     = refImages.filter(r => r.selected && r.note);
   const ctx = { name, color, size, features, scene, style, pain, gain, usp, emos, refs, fw: selectedFw };
 
-  const steps = [
-    { num:1, icon:'🎯', name:'ヒーローショット',   frame:'Attention', type:'main' },
-    { num:2, icon:'💥', name:'ペイン共感',         frame:'Problem',   type:'pain_shot' },
-    { num:3, icon:'⭐', name:'主要ベネフィット',   frame:'Interest',  type:'benefit' },
-    { num:4, icon:'🌿', name:'ライフスタイル',     frame:'Desire',    type:'lifestyle' },
-    { num:5, icon:'🔍', name:'品質・信頼証明',     frame:'Trust',     type:'detail' },
-    { num:6, icon:'📐', name:'スペック・サイズ',   frame:'Confidence',type:'size' },
-    { num:7, icon:'🏁', name:'総まとめ・CTA',      frame:'Action',    type:'summary' },
-  ];
+  const steps = allCarouselSteps.slice(0, selectedImageCount);
 
   const container = document.getElementById('carouselResults');
   container.innerHTML = '';
+
+  // 採用構成案の情報があれば表示
+  if (SD.adoptedComposition) {
+    const info = document.createElement('div');
+    info.className = 'chatgpt-tip';
+    info.innerHTML = `<strong>🏗️ 採用構成案: ${SD.adoptedComposition.pattern}（${SD.adoptedComposition.name}）</strong> — 全${selectedImageCount}枚を一括生成します`;
+    container.appendChild(info);
+  }
 
   steps.forEach(step => {
     const lang = selectedLang;
@@ -1828,14 +2069,7 @@ function updateNote(id,v) { const i=refImages.find(r=>r.id===id); if(i) i.note=v
 let strategyImages = [];
 let selectedImageCount = 7;
 
-function setImageCount(n) {
-  selectedImageCount = n;
-  document.querySelectorAll('.img-count-btn').forEach((btn, i) => {
-    btn.classList.toggle('active', i + 1 === n);
-  });
-  const el = document.getElementById('sTabImgCount');
-  if (el) el.textContent = n;
-}
+function setImageCount(n) { setImageCountAll(n); }
 
 // 商品画像アップロード
 function handleStrategyImages(e) {
@@ -2150,6 +2384,13 @@ ${imgRoles.map((r, i) => `### 【${r}】
     const btn = document.getElementById('sCopy'+i);
     btn.style.display = 'block';
   });
+
+  // 採用ボタンを表示
+  const adoptBar = document.getElementById('adoptBar');
+  if (adoptBar) adoptBar.style.display = 'flex';
+
+  // SDに商品情報を保存
+  saveTabData('strategy');
 
   document.getElementById('strategyOutputArea').style.display = 'block';
   document.getElementById('strategyOutputArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
