@@ -288,6 +288,36 @@
     display: flex; align-items: center; justify-content: center; gap: 8px;
   }
   .btn-gen-strategy:hover { background: #374151; }
+  .btn-gen-review {
+    width: 100%; padding: 11px; background: #146EB4; color: white;
+    font-size: 13px; font-weight: 700; border: none; border-radius: 8px;
+    cursor: pointer; margin: 6px 0 14px; transition: background 0.2s;
+  }
+  .btn-gen-review:hover { background: #1a5c96; }
+
+  /* 画像枚数セレクター */
+  .img-count-selector { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .img-count-btn {
+    width: 38px; height: 38px; border: 2px solid var(--border); border-radius: 8px;
+    background: white; font-size: 14px; font-weight: 700; color: #555;
+    cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+  }
+  .img-count-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .img-count-btn.active { background: var(--orange); border-color: var(--orange); color: white; }
+  .img-count-note { font-size: 11px; color: #888; margin-top: 6px; }
+
+  /* 構成案出力 */
+  .composition-tab-bar { display: flex; gap: 0; border-bottom: 2px solid var(--border); }
+  .c-tab {
+    flex: 1; padding: 10px 6px; font-size: 12px; font-weight: 700; text-align: center;
+    color: #666; cursor: pointer; border-bottom: 3px solid transparent;
+    margin-bottom: -2px; background: white; border-right: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .c-tab:first-child { border-left: 1px solid var(--border); border-radius: 6px 0 0 0; }
+  .c-tab:last-child { border-radius: 0 6px 0 0; border-right: 1px solid var(--border); }
+  .c-tab.active { color: var(--orange); border-bottom-color: var(--orange); background: #fffbf5; }
+  .c-tab:hover:not(.active) { background: #f9f9f9; color: var(--dark); }
 
   .chatgpt-tip {
     background: #F0FFF4; border: 1px solid #A9DFBF; border-radius: 8px;
@@ -815,10 +845,10 @@
 
   <div class="flow-steps">
     <div class="flow-step"><span class="fs-icon">🖼️</span><div class="fs-label">商品画像をアップ</div><div class="fs-sub">自社商品の写真</div></div>
-    <div class="flow-step"><span class="fs-icon">📝</span><div class="fs-label">使い方を記入</div><div class="fs-sub">商品説明・特徴</div></div>
+    <div class="flow-step"><span class="fs-icon">📝</span><div class="fs-label">商品情報を記入</div><div class="fs-sub">特徴・ターゲット</div></div>
     <div class="flow-step"><span class="fs-icon">🔗</span><div class="fs-label">競合URLを入力</div><div class="fs-sub">類似商品のURL</div></div>
-    <div class="flow-step"><span class="fs-icon">⭐</span><div class="fs-label">レビューを貼付</div><div class="fs-sub">任意・精度UP</div></div>
-    <div class="flow-step"><span class="fs-icon">✨</span><div class="fs-label">プロンプト生成</div><div class="fs-sub">ChatGPTへ</div></div>
+    <div class="flow-step"><span class="fs-icon">🔢</span><div class="fs-label">枚数を選ぶ</div><div class="fs-sub">1〜9枚</div></div>
+    <div class="flow-step"><span class="fs-icon">✨</span><div class="fs-label">構成案を生成</div><div class="fs-sub">3パターン提案</div></div>
   </div>
 
   <div class="grid-2">
@@ -848,10 +878,43 @@
       </div>
 
       <div class="field">
-        <label>商品の使い方・特徴の説明<span class="required">*</span></label>
-        <div class="hint">どんな人が・どんな場面で・どう使うか。競合と違う点も記入</div>
-        <textarea id="strategyUsage" style="min-height:100px;"
-          placeholder="例:&#10;・保温6時間・保冷8時間の真空二重断熱タンブラー&#10;・朝コーヒーを入れて通勤、オフィスでも使える&#10;・蓋が片手で開くワンタッチ設計（競合は両手必要）&#10;・食洗機対応で洗いやすい"></textarea>
+        <label>商品カテゴリ</label>
+        <select id="strategyCategory">
+          <option value="">カテゴリを選択</option>
+          <option value="サプリメント・健康食品">サプリメント・健康食品</option>
+          <option value="美容・スキンケア">美容・スキンケア</option>
+          <option value="ダイエット・フィットネス">ダイエット・フィットネス</option>
+          <option value="キッチン・調理器具">キッチン・調理器具</option>
+          <option value="生活雑貨・日用品">生活雑貨・日用品</option>
+          <option value="家電・スマートホーム">家電・スマートホーム</option>
+          <option value="アウトドア・スポーツ">アウトドア・スポーツ</option>
+          <option value="ベビー・子供用品">ベビー・子供用品</option>
+          <option value="ペット用品">ペット用品</option>
+          <option value="ファッション・アパレル">ファッション・アパレル</option>
+          <option value="食品・飲料">食品・飲料</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>ターゲット客層<span class="required">*</span></label>
+        <div class="hint">誰に向けた商品か（年齢・性別・ライフスタイル・悩みなど）</div>
+        <textarea id="strategyTarget" style="min-height:70px;"
+          placeholder="例:&#10;・30〜40代の働く女性&#10;・毎朝コーヒーを飲む習慣がある&#10;・デスクでのランチを大切にしている&#10;・おしゃれなアイテムを好む"></textarea>
+      </div>
+
+      <div class="field">
+        <label>商品の使い方・主な特徴<span class="required">*</span></label>
+        <div class="hint">どんな場面で・どう使うか。機能・成分・素材など</div>
+        <textarea id="strategyUsage" style="min-height:90px;"
+          placeholder="例:&#10;・保温6時間・保冷8時間の真空二重断熱タンブラー&#10;・蓋が片手で開くワンタッチ設計&#10;・食洗機対応で洗いやすい&#10;・容量500ml"></textarea>
+      </div>
+
+      <div class="field">
+        <label>競合との差別化・自社の強み</label>
+        <div class="hint">競合商品と比べて何が優れているか・違うか</div>
+        <textarea id="strategyUsp" style="min-height:70px;"
+          placeholder="例:&#10;・競合は両手で蓋を開ける設計→自社はワンタッチ&#10;・同価格帯で最長保温時間&#10;・カラーバリエーション10色（競合は3色）"></textarea>
       </div>
 
       <div class="field">
@@ -862,7 +925,7 @@
       <div class="field">
         <label>現在の課題・悩み（任意）</label>
         <textarea id="strategyChallenges" style="min-height:60px;"
-          placeholder="例:&#10;・販売開始したばかりでレビューがない&#10;・競合が多くて差別化が難しい&#10;・どの画像を作れば良いか分からない"></textarea>
+          placeholder="例:&#10;・販売開始したばかりでレビューがない&#10;・競合が多くて差別化が難しい"></textarea>
       </div>
     </div>
 
@@ -902,6 +965,18 @@
       </div>
 
       <div class="field">
+        <label>レビュー収集プロンプト</label>
+        <div class="hint">競合URLを入力後にクリック → ChatGPTでレビューを収集 → 下に貼り付け</div>
+        <button class="btn-gen-review" onclick="generateReviewPrompt()">
+          ⭐ 競合レビュー収集プロンプトを生成する →
+        </button>
+        <div id="reviewPromptArea" style="display:none; margin-bottom:10px;">
+          <div class="strategy-prompt-text" id="reviewPromptText" style="background:#f9f9f9; border:1px solid #ddd; border-radius:6px; padding:10px; font-size:11px; max-height:160px; overflow-y:auto;"></div>
+          <button class="btn-copy" onclick="copyReviewPrompt()" id="btnCopyReviewPrompt" style="margin-top:6px;">コピー</button>
+        </div>
+      </div>
+
+      <div class="field">
         <label>分析してほしいこと（任意）</label>
         <textarea id="strategyFocus" style="min-height:60px;"
           placeholder="例:&#10;・競合より安い価格で差別化できるか&#10;・どのターゲット層に絞るべきか&#10;・どの訴求ポイントを画像で前面に出すべきか"></textarea>
@@ -910,18 +985,35 @@
 
   </div><!-- /grid-2 -->
 
+  <!-- 画像枚数セレクター -->
+  <div class="card" style="margin-bottom:4px;">
+    <h2>🔢 作成する画像枚数を選ぶ</h2>
+    <div class="img-count-selector" id="imgCountSelector">
+      <button class="img-count-btn" onclick="setImageCount(1)">1</button>
+      <button class="img-count-btn" onclick="setImageCount(2)">2</button>
+      <button class="img-count-btn" onclick="setImageCount(3)">3</button>
+      <button class="img-count-btn" onclick="setImageCount(4)">4</button>
+      <button class="img-count-btn" onclick="setImageCount(5)">5</button>
+      <button class="img-count-btn" onclick="setImageCount(6)">6</button>
+      <button class="img-count-btn active" onclick="setImageCount(7)">7</button>
+      <button class="img-count-btn" onclick="setImageCount(8)">8</button>
+      <button class="img-count-btn" onclick="setImageCount(9)">9</button>
+    </div>
+    <div class="img-count-note">💡 Amazon出品は最大9枚（メイン1枚 + サブ最大8枚）。初期ローンチは7枚が目安です。</div>
+  </div>
+
   <!-- 生成ボタン -->
   <button class="btn-gen-strategy" onclick="generateStrategyPrompts()">
-    🧠 販売戦略・画像制作計画を生成する →
+    🏗️ 画像構成案を3パターン生成する →
   </button>
 
   <!-- 出力エリア -->
   <div id="strategyOutputArea" style="display:none;">
     <div class="card" style="padding:0; overflow:hidden;">
       <div class="strategy-output-tabs" id="strategyOutputTabs">
-        <div class="s-tab active" onclick="switchStrategyTab(0)">📊 販売戦略</div>
-        <div class="s-tab" onclick="switchStrategyTab(1)">🔍 競合分析</div>
-        <div class="s-tab" onclick="switchStrategyTab(2)">🖼️ 画像制作計画 7枚</div>
+        <div class="s-tab active" onclick="switchStrategyTab(0)">🏗️ 構成案Aパターン別</div>
+        <div class="s-tab" onclick="switchStrategyTab(1)">🔍 競合・差別化分析</div>
+        <div class="s-tab" id="sTabImgPlan" onclick="switchStrategyTab(2)">🖼️ 画像制作計画 <span id="sTabImgCount">7</span>枚</div>
       </div>
       <div class="strategy-output-panel active" id="sPanel0">
         <div class="strategy-prompt-text strategy-empty" id="sText0">生成ボタンを押してください</div>
@@ -1734,6 +1826,16 @@ function updateNote(id,v) { const i=refImages.find(r=>r.id===id); if(i) i.note=v
 
 // ===== 販売戦略タブ =====
 let strategyImages = [];
+let selectedImageCount = 7;
+
+function setImageCount(n) {
+  selectedImageCount = n;
+  document.querySelectorAll('.img-count-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i + 1 === n);
+  });
+  const el = document.getElementById('sTabImgCount');
+  if (el) el.textContent = n;
+}
 
 // 商品画像アップロード
 function handleStrategyImages(e) {
@@ -1792,6 +1894,49 @@ function removeCompetitor(btn) {
   btn.parentElement.remove();
 }
 
+// レビュー収集プロンプト生成
+function generateReviewPrompt() {
+  const urls = Array.from(document.querySelectorAll('.competitor-url')).map(i => i.value.trim()).filter(Boolean);
+  if (!urls.length) { alert('競合商品のURLを1件以上入力してください。'); return; }
+
+  const urlList = urls.map((u,i) => `${i+1}. ${u}`).join('\n');
+  const prompt = `以下のAmazon商品ページURLにアクセスして、各商品のレビューを分析してください（ブラウジング機能を使用）。
+
+【競合商品URL】
+${urlList}
+
+各URLについて以下の情報を収集してください:
+
+1. **商品タイトルと価格帯**
+2. **高評価レビュー（★4〜5）のポイント TOP5**
+   - 顧客が実際に使っている言葉・表現をそのまま引用
+   - 満足している理由・使用シーン
+3. **低評価レビュー（★1〜2）の不満 TOP5**
+   - 繰り返し出てくる不満・期待外れな点
+   - 「〜だったら良かった」という改善要望
+4. **レビューから読み取れる購入者像**
+   - どんな人が買っているか
+   - どんな目的・シーンで使っているか
+5. **競合商品の画像について**
+   - メイン画像・サブ画像でどんな訴求をしているか
+   - 印象的な画像の特徴
+
+分析後、「自社商品の差別化に使えるインサイト TOP3」をまとめてください。`;
+
+  const area = document.getElementById('reviewPromptArea');
+  const text = document.getElementById('reviewPromptText');
+  area.style.display = 'block';
+  text.textContent = prompt;
+}
+function copyReviewPrompt() {
+  const text = document.getElementById('reviewPromptText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btnCopyReviewPrompt');
+    btn.textContent = '✓ コピー済み'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
 // 戦略タブ切り替え
 function switchStrategyTab(idx) {
   document.querySelectorAll('.s-tab').forEach((t,i) => t.classList.toggle('active', i===idx));
@@ -1814,6 +1959,9 @@ function generateStrategyPrompts() {
   const usage       = document.getElementById('strategyUsage').value.trim();
   if (!usage) { alert('商品の使い方・特徴の説明を入力してください。'); return; }
 
+  const category    = document.getElementById('strategyCategory').value;
+  const target      = document.getElementById('strategyTarget').value.trim();
+  const usp         = document.getElementById('strategyUsp').value.trim();
   const price       = document.getElementById('strategyPrice').value.trim();
   const challenges  = document.getElementById('strategyChallenges').value.trim();
   const focus       = document.getElementById('strategyFocus').value.trim();
@@ -1821,6 +1969,7 @@ function generateStrategyPrompts() {
   const negReviews  = document.getElementById('reviewNegative').value.trim();
   const urls        = Array.from(document.querySelectorAll('.competitor-url')).map(i => i.value.trim()).filter(Boolean);
   const hasImages   = strategyImages.length > 0;
+  const imgCount    = selectedImageCount;
 
   const urlBlock = urls.length
     ? `競合商品URL（ブラウジングでアクセスして分析してください）:\n${urls.map((u,i)=>`${i+1}. ${u}`).join('\n')}`
@@ -1835,137 +1984,163 @@ function generateStrategyPrompts() {
     ? `※ この会話に商品画像（${strategyImages.length}枚）を添付していますので、画像も分析に含めてください。`
     : `※ 商品画像は別途添付します（添付後にこの内容で分析をお願いします）。`;
 
-  // === プロンプト1: 販売戦略 ===
-  const p1 = `あなたはAmazon販売の専門コンサルタントです。以下の情報をもとに、詳細な販売戦略を立案してください。
+  const productInfo = `【自社商品情報】
+商品名: ${productName || '（未入力）'}
+カテゴリ: ${category || '（未選択）'}
+ターゲット客層: ${target || '（未入力）'}
+使い方・特徴:
+${usage}${usp ? `\n競合との差別化・強み:\n${usp}` : ''}${price ? `\n価格帯: ${price}` : ''}${challenges ? `\n現在の課題:\n${challenges}` : ''}`;
+
+  // 画像N枚分のラベル（役割）を動的生成
+  function buildImageRoles(n) {
+    const roles = [
+      { ja: 'メイン画像（ヒーロー）', role: 'Attention — 最初の1秒で注目を奪う' },
+      { ja: 'ペイン共感・問題提起',   role: 'Problem — ターゲットの悩みに共感する' },
+      { ja: 'ベネフィット訴求',       role: 'Benefit — 機能ではなく「恩恵」を伝える' },
+      { ja: 'ライフスタイル',         role: 'Desire — 理想の生活シーンで欲しいと思わせる' },
+      { ja: '品質・信頼証明',         role: 'Trust — 素材・製法・受賞歴で信頼を構築する' },
+      { ja: 'スペック・サイズ比較',   role: 'Confidence — 購入前の不安を払拭する' },
+      { ja: '総まとめ・CTA',         role: 'Action — 購入を後押しするまとめ' },
+      { ja: '使用シーン・応用',       role: 'Usage — 具体的な使い方シーンを見せる' },
+      { ja: 'Before/After・比較',    role: 'Proof — 使う前後・競合との比較で価値を証明' },
+    ];
+    return Array.from({length: n}, (_, i) => `画像${i+1}/${n}: ${roles[i] ? roles[i].ja : '追加コンテンツ'} — ${roles[i] ? roles[i].role : 'ブランド価値・付加情報'}`);
+  }
+
+  const imgRoles = buildImageRoles(imgCount);
+  const imgRoleBlock = imgRoles.map(r => `- ${r}`).join('\n');
+
+  // === プロンプト1: 3パターン構成案提案 ===
+  const p1 = `あなたはAmazon商品画像のクリエイティブディレクターです。以下の情報をもとに、コンバージョン率を最大化する「${imgCount}枚カルーセル画像構成案」を【3パターン】提案してください。
 
 ${imageNote}
 
-【自社商品情報】
-商品名: ${productName || '（商品名未入力）'}
-価格帯: ${price || '未入力'}
-使い方・特徴・競合との違い:
-${usage}
-${challenges ? `\n現在の課題:\n${challenges}` : ''}
+${productInfo}
 
 【競合情報】
 ${urlBlock}
 ${reviewBlock ? `\n${reviewBlock}` : ''}
-${focus ? `\n【特に分析してほしいこと】\n${focus}` : ''}
+${focus ? `\n【特に重視してほしいこと】\n${focus}` : ''}
 
 ---
-上記の情報をもとに、以下の項目を具体的に回答してください:
+## 回答形式
 
-1. **ターゲット顧客の定義**
-   - 最も購買可能性が高い顧客像（年齢・性別・ライフスタイル・購買動機）
-   - 競合レビューから読み取れる「実際の購入者像」との比較
+以下の3パターンをそれぞれ詳しく提案してください。
 
-2. **差別化ポイントと訴求軸**
-   - 競合商品が解決できていない不満（低評価レビューより）
-   - 自社商品が提供できる独自の価値（USP）
-   - 最も強調すべきメッセージ TOP3
+---
+### 【構成案A: 問題解決型】
+**戦略の狙い:** ターゲットの悩みに共感し、解決策として商品を提示する
 
-3. **価格戦略**
-   - 競合価格帯の中でのポジショニング提案
-   - 価格に見合う価値をどう見せるか
+${imgRoles.map((r, i) => `**画像${i+1}/${imgCount}:**
+- 役割・コンセプト:
+- 見せるべき内容（構図・シーン・被写体）:
+- 推奨する背景・ライティング:
+- テキストオーバーレイ案（サブ画像の場合）:
+- DALL-E生成用プロンプト（英語・50語程度）:`).join('\n\n')}
 
-4. **Amazon検索・表示戦略**
-   - どんなキーワードで検索されるか
-   - タイトル・箇条書きで使うべき表現
+**この構成が向いている理由（この商品・ターゲットへの適合度）:**
 
-5. **販売初期の優先アクション**
-   - レビューゼロ・販売初期から売上を作る具体的な3ステップ`.trim();
+---
+### 【構成案B: ライフスタイル訴求型】
+**戦略の狙い:** 理想の生活シーンを見せて「これが自分の生活だ」と感じさせる
 
-  // === プロンプト2: 競合分析 ===
-  const p2 = `あなたはAmazon商品リスティングの専門分析家です。以下の情報をもとに、徹底的な競合分析と差別化戦略を提案してください。
+${imgRoles.map((r, i) => `**画像${i+1}/${imgCount}:**
+- 役割・コンセプト:
+- 見せるべき内容（構図・シーン・被写体）:
+- 推奨する背景・ライティング:
+- テキストオーバーレイ案（サブ画像の場合）:
+- DALL-E生成用プロンプト（英語・50語程度）:`).join('\n\n')}
+
+**この構成が向いている理由:**
+
+---
+### 【構成案C: 競合差別化型】
+**戦略の狙い:** 競合との明確な違いを可視化し、選ばれる理由を示す
+
+${imgRoles.map((r, i) => `**画像${i+1}/${imgCount}:**
+- 役割・コンセプト:
+- 見せるべき内容（構図・シーン・被写体）:
+- 推奨する背景・ライティング:
+- テキストオーバーレイ案（サブ画像の場合）:
+- DALL-E生成用プロンプト（英語・50語程度）:`).join('\n\n')}
+
+**この構成が向いている理由:**
+
+---
+## 最後に
+3パターンを比較して、**この商品・ターゲット・価格帯に最もおすすめの構成案と理由**を1段落で教えてください。`.trim();
+
+  // === プロンプト2: 競合・差別化分析 ===
+  const p2 = `あなたはAmazon商品リスティングの専門分析家です。以下の情報をもとに、競合分析と差別化戦略を提案してください。
 
 ${imageNote}
 
-【自社商品情報】
-商品名: ${productName || '（商品名未入力）'}
-使い方・特徴:
-${usage}
-${price ? `価格帯: ${price}` : ''}
+${productInfo}
 
-【競合商品URL】
+【競合商品URL（ブラウジングでアクセスして分析）】
 ${urlBlock}
 
-${reviewBlock ? `【競合レビュー（テキスト）】\n${reviewBlock}` : ''}
+${reviewBlock ? `【手動収集レビュー】\n${reviewBlock}` : ''}
 
 ---
 以下の項目で詳しく分析してください:
 
-1. **競合商品の画像戦略分析**（各URLにアクセスして）
-   - 各競合のメイン画像・サブ画像で使われている戦略
-   - どんな訴求軸・感情を使っているか
-   - 画像の強み・弱点
+### 1. 競合商品の画像戦略分析
+各競合URLにアクセスして以下を分析:
+- メイン画像・サブ画像で使われている訴求戦略
+- どんな感情・価値観に訴えているか
+- 画像の強み・弱点（改善できそうな点）
 
-2. **レビューマイニング**
-   - 高評価（★4〜5）から: 顧客が本当に評価している点 TOP5
-   - 低評価（★1〜2）から: 繰り返し出てくる不満・期待外れ TOP5
-   - 顧客が実際に使っている言葉・表現（そのままコピーライティングに使える言葉）
+### 2. レビューマイニング（URLにアクセスして収集）
+- 高評価（★4〜5）: 顧客が本当に評価している点 TOP5
+- 低評価（★1〜2）: 繰り返し出てくる不満 TOP5
+- **そのままコピーライティングに使える顧客の言葉** TOP10
 
-3. **市場のスキマ（Gap分析）**
-   - 競合が誰も解決できていないペインポイント
-   - 自社商品で埋められる差別化の余地
+### 3. 市場のスキマ（Gap分析）
+- 競合が誰も解決できていないペインポイント
+- 自社商品で埋められる差別化の余地
 
-4. **自社商品の競合優位性マトリクス**
-   - 競合A・B・C vs 自社の比較表（価格・品質・機能・画像力・レビュー数）
+### 4. 競合優位性マトリクス
+競合A・B・C vs 自社の比較表:
+（価格 / 主な機能 / 画像クオリティ / レビュー数・評価 / ターゲット層）
 
-5. **今すぐ真似すべき競合の戦略と、絶対に差別化すべき点の整理**`.trim();
+### 5. 画像制作に活かすべき差別化ポイント TOP3
+具体的に「どの画像で・どう表現するか」まで提案してください。`.trim();
 
-  // === プロンプト3: 画像制作計画 ===
-  const p3 = `あなたはAmazon商品リスティング画像のクリエイティブディレクターです。以下の商品情報と競合分析をもとに、コンバージョン率を最大化する「7枚カルーセル画像制作計画」を立案してください。
+  // === プロンプト3: N枚画像制作計画 ===
+  const p3 = `あなたはAmazon商品リスティング画像のクリエイティブディレクターです。以下の情報をもとに、コンバージョン率を最大化する「${imgCount}枚カルーセル画像制作計画」を立案してください。
 
 ${imageNote}
 
-【自社商品情報】
-商品名: ${productName || '（商品名未入力）'}
-使い方・特徴:
-${usage}
-${price ? `価格帯: ${price}` : ''}
+${productInfo}
 
-【競合商品URL（参考）】
+【競合商品URL】
 ${urlBlock}
-
-${reviewBlock ? `【競合レビューから読み取った顧客インサイト】\n${reviewBlock}` : ''}
+${reviewBlock ? `\n【競合レビュー・顧客インサイト】\n${reviewBlock}` : ''}
 
 ---
-Amazon商品カルーセル7枚の制作計画を、以下の形式で各画像ごとに詳しく回答してください:
+Amazon商品カルーセル **${imgCount}枚** の制作計画を、各画像ごとに詳しく回答してください。
 
-**【画像1/7: メイン画像 — Attention（注目を奪う）】**
-- 目的と戦略:
-- 推奨する構図・アングル:
-- 背景・照明:
-- この画像でのUSP表現方法:
-- 競合との差別化ポイント:
+${imgRoles.map((r, i) => `### 【${r}】
 
-**【画像2/7: ペイン共感 — Problem（悩みに共感）】**
-- 表現すべきペインポイント（レビューより）:
-- シーン・構図:
-- 感情的な訴求方法:
+**① 目的・戦略（なぜこの画像が必要か）:**
 
-**【画像3/7: ベネフィット訴求 — Interest（興味を深める）】**
-- 伝えるべきベネフィット TOP3（機能ではなく恩恵）:
-- 視覚的表現方法:
+**② 見せるべき内容（被写体・シーン・構図・アングル）:**
 
-**【画像4/7: ライフスタイル — Desire（欲しいと思わせる）】**
-- ターゲットが「これが自分の生活だ」と感じるシーン:
-- 登場人物・場所・時間帯:
-- 演出のポイント:
+**③ 背景・ライティング・色調:**
 
-**【画像5/7: 品質証明 — Trust（信頼を構築）】**
-- 見せるべき素材・部品・こだわりのディテール:
-- 照明・撮影方法:
+**④ テキストオーバーレイ（文言案）:**
 
-**【画像6/7: サイズ・スペック — Confidence（購入不安を払拭）】**
-- 伝えるべき寸法・比較対象:
-- 構図:
+**⑤ 競合との差別化ポイント:**
 
-**【画像7/7: 総まとめ — Action（購入を後押し）】**
-- 締めくくりのメッセージ（ビジュアルで表現）:
-- 構図・雰囲気:
+**⑥ DALL-E / Midjourney用プロンプト（英語）:**`).join('\n\n---\n\n')}
 
-最後に: **競合画像に勝つための3つの重点ポイント**を箇条書きで`.trim();
+---
+## まとめ: この${imgCount}枚構成で競合画像に勝つための重点ポイント TOP3`.trim();
+
+  // タブのラベルを更新
+  const tabEl = document.getElementById('sTabImgPlan');
+  if (tabEl) tabEl.innerHTML = `🖼️ 画像制作計画 <span id="sTabImgCount">${imgCount}</span>枚`;
 
   // 表示
   [p1, p2, p3].forEach((p, i) => {
