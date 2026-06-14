@@ -619,6 +619,28 @@
   .fmt-note { font-size: 9px; font-weight: 400; color: #999; margin-top: 2px; }
   .fmt-btn.active .fmt-note { color: var(--blue); opacity: 0.8; }
 
+  /* 参考画像パネル（プロンプト生成タブ内） */
+  .ref-panel-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: white; border: 1px solid var(--border);
+    border-radius: 8px; cursor: pointer; margin-bottom: 8px;
+    font-size: 12px; font-weight: 600; color: #555; transition: all 0.15s;
+  }
+  .ref-panel-toggle:hover { background: #f9f9f9; border-color: var(--orange); color: var(--orange); }
+  .ref-panel-toggle .rpt-left { display: flex; align-items: center; gap: 8px; }
+  .ref-panel-toggle .rpt-badge {
+    background: var(--orange); color: white; border-radius: 10px;
+    font-size: 10px; font-weight: 700; padding: 1px 7px; display: none;
+  }
+  .ref-panel-toggle .rpt-badge.visible { display: inline-block; }
+  .ref-panel-toggle .rpt-arrow { transition: transform 0.2s; font-size: 10px; }
+  .ref-panel-toggle.open .rpt-arrow { transform: rotate(180deg); }
+  .ref-panel-body { display: none; border: 1px solid var(--border); border-radius: 8px; padding: 14px; background: white; margin-bottom: 12px; }
+  .ref-panel-body.open { display: block; }
+  .ref-input-inline { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  @media(max-width:700px) { .ref-input-inline { grid-template-columns: 1fr; } }
+  .ref-gallery-inline { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
+
   /* ポジショニング */
   .pos-btn { width:100%; padding:7px 10px; border:2px solid var(--border); border-radius:6px; background:white; font-size:12px; font-weight:700; cursor:pointer; text-align:left; transition:all 0.15s; color:#444; display:flex; align-items:center; gap:6px; }
   .pos-btn:hover { border-color: var(--orange); background:#FFF8EE; }
@@ -642,7 +664,6 @@
 <div class="tabs">
   <div class="tab active"  onclick="switchTab('generate')">プロンプト生成</div>
   <div class="tab"         onclick="switchTab('carousel')" id="tabCarouselLabel">カルーセル戦略 <span id="tabCarouselCount">7</span>枚</div>
-  <div class="tab"         onclick="switchTab('reference')">参考画像ボード</div>
   <div class="tab"         onclick="switchTab('strategy')">販売戦略コンサルト</div>
   <div class="tab"         onclick="switchTab('rules')">Amazon 規約</div>
 </div>
@@ -815,7 +836,51 @@
       </select>
     </div>
 
-    <div id="selectedRefsBar" class="selected-refs-bar">参考画像 <strong id="selectedRefsCount">0</strong> 枚のメモをプロンプトに反映中</div>
+    <!-- 参考画像パネル（折りたたみ） -->
+    <div class="ref-panel-toggle" id="refPanelToggle" onclick="toggleRefPanel()">
+      <div class="rpt-left">
+        🖼️ 参考画像を追加してプロンプトに反映する
+        <span class="rpt-badge" id="refBadge">0枚選択中</span>
+      </div>
+      <span class="rpt-arrow">▼</span>
+    </div>
+    <div class="ref-panel-body" id="refPanelBody">
+      <div class="ref-input-inline">
+        <!-- URL追加 -->
+        <div>
+          <label style="font-size:11px; font-weight:600; margin-bottom:4px; display:block;">Amazon 商品URL から追加</label>
+          <div class="ref-input-row">
+            <input type="text" id="asinUrl" placeholder="https://www.amazon.co.jp/dp/B08XXXXXX">
+            <button class="btn-sm btn-blue" onclick="parseAmazonUrl()">解析</button>
+          </div>
+          <div id="asinResult" style="margin-top:6px;"></div>
+          <div style="margin-top:8px;">
+            <label style="font-size:11px; font-weight:600; margin-bottom:4px; display:block;">画像URLを直接追加</label>
+            <div class="ref-input-row">
+              <input type="text" id="imgUrl" placeholder="https://m.media-amazon.com/images/I/...">
+              <button class="btn-sm btn-blue" onclick="addImageByUrl()">追加</button>
+            </div>
+          </div>
+        </div>
+        <!-- ファイルアップロード -->
+        <div>
+          <label style="font-size:11px; font-weight:600; margin-bottom:4px; display:block;">画像ファイルをアップロード</label>
+          <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" style="padding:16px; min-height:80px;">
+            <span class="drop-icon" style="font-size:20px;">🖼️</span>
+            ここにドロップまたはクリック<br>
+            <small style="color:#bbb;">JPG / PNG / WebP</small>
+          </div>
+          <input type="file" id="fileInput" accept="image/*" multiple style="display:none;" onchange="handleFileUpload(event)">
+          <div class="tip" style="margin-top:6px; font-size:10px;">💡 Amazon商品ページで画像を右クリック →「名前を付けて画像を保存」してアップロード</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:#888; margin-bottom:8px;">📌 「参考に使う」を選択 + <strong>メモ欄に気に入った点を記入</strong> → プロンプトに自動反映されます</div>
+      <div id="refGallery" class="ref-gallery-inline">
+        <div class="empty-gallery" style="grid-column:1/-1;">
+          <span class="empty-icon" style="font-size:24px;">📷</span>まだ画像がありません
+        </div>
+      </div>
+    </div>
 
     <div class="field">
       <label>出力画像サイズ（ピクセル）</label>
@@ -1000,57 +1065,6 @@
 </div>
 
 <!-- ===== タブ3: 参考画像ボード ===== -->
-<div id="tab-reference" class="tab-content">
-<div class="container">
-<div class="grid-2" style="margin-bottom:18px;">
-
-  <div class="card">
-    <h2>Amazon 商品URLから追加</h2>
-    <p style="font-size:12px; color:#666; margin-bottom:10px;">URLを貼り付けてASINを抽出し、商品ページへのリンクを生成します。</p>
-    <div class="field">
-      <label>Amazon 商品URL（日本・米国対応）</label>
-      <div class="ref-input-row">
-        <input type="text" id="asinUrl" placeholder="https://www.amazon.co.jp/dp/B08XXXXXX">
-        <button class="btn-sm btn-blue" onclick="parseAmazonUrl()">解析</button>
-      </div>
-    </div>
-    <div id="asinResult"></div>
-    <hr style="border:none; border-top:1px solid var(--border); margin:12px 0;">
-    <div class="field">
-      <label>画像URLを直接追加</label>
-      <div class="ref-input-row">
-        <input type="text" id="imgUrl" placeholder="https://m.media-amazon.com/images/I/...">
-        <button class="btn-sm btn-blue" onclick="addImageByUrl()">追加</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>画像ファイルをアップロード</h2>
-    <p style="font-size:12px; color:#666; margin-bottom:10px;">Amazonから保存した画像や参考画像をアップロードします。</p>
-    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-      <span class="drop-icon">🖼️</span>
-      ここに画像をドロップ<br>またはクリックしてファイルを選択<br>
-      <small style="color:#bbb;">JPG / PNG / WebP 対応</small>
-    </div>
-    <input type="file" id="fileInput" accept="image/*" multiple style="display:none;" onchange="handleFileUpload(event)">
-    <div class="tip">💡 Amazon商品ページで画像を右クリック →「名前を付けて画像を保存」してからアップロード</div>
-  </div>
-</div>
-
-<div class="card">
-  <h2>参考画像ボード</h2>
-  <p style="font-size:12px; color:#666; margin-bottom:12px;">
-    「参考に使う」を選択するとプロンプトに反映されます。<strong>メモ欄に気に入った点を記入</strong>すると、そのスタイルが自動でプロンプトに組み込まれます。
-  </p>
-  <div id="refGallery" class="ref-gallery">
-    <div class="empty-gallery">
-      <span class="empty-icon">📷</span>まだ画像がありません。<br>上のフォームから追加してください。
-    </div>
-  </div>
-</div>
-</div>
-</div>
 
 <!-- ===== タブ4: 販売戦略コンサルト ===== -->
 <div id="tab-strategy" class="tab-content">
@@ -1454,7 +1468,7 @@ function switchTab(name) {
     const cur = active.id.replace('tab-', '');
     saveTabData(cur);
   }
-  const names = ['generate','carousel','reference','strategy','rules'];
+  const names = ['generate','carousel','strategy','rules'];
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i]===name));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
@@ -1779,11 +1793,26 @@ function setLang(lang) {
 
 // ===== 参考画像 =====
 let refImages = [];
+// 参考画像パネル開閉
+function toggleRefPanel() {
+  const toggle = document.getElementById('refPanelToggle');
+  const body   = document.getElementById('refPanelBody');
+  toggle.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
 function updateSelectedRefsBar() {
-  const n = refImages.filter(r=>r.selected).length;
-  const bar = document.getElementById('selectedRefsBar');
-  document.getElementById('selectedRefsCount').textContent = n;
-  bar.classList.toggle('visible', n>0);
+  const selected = refImages.filter(r=>r.selected);
+  const n = selected.length;
+  // バッジ更新
+  const badge = document.getElementById('refBadge');
+  if (badge) {
+    badge.textContent = n + '枚選択中';
+    badge.classList.toggle('visible', n > 0);
+  }
+  // トグルボタンの色変化
+  const toggle = document.getElementById('refPanelToggle');
+  if (toggle) toggle.style.borderColor = n > 0 ? 'var(--orange)' : '';
 }
 
 // ===== カルーセルステップ選択 =====
