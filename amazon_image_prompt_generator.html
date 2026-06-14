@@ -1888,7 +1888,7 @@ function generateVariations() {
   const gain     = document.getElementById('desiredOutcome').value.trim();
   const usp      = document.getElementById('usp').value.trim();
   const emos     = getSelectedEmos();
-  const refs     = refImages.filter(r => r.selected && r.note);
+  const refs     = refImages.filter(r => r.selected);
   const ctx      = { name, category, color, size, features, scene, style, pain, gain, usp, emos, refs, fw: selectedFw };
 
   selectedVariations.clear();
@@ -2090,7 +2090,7 @@ function generateAllCarousel() {
   const gain     = document.getElementById('desiredOutcome').value.trim();
   const usp      = document.getElementById('usp').value.trim() || SD.usp;
   const emos     = getSelectedEmos();
-  const refs     = refImages.filter(r => r.selected && r.note);
+  const refs     = refImages.filter(r => r.selected);
   const ctx = { name, color, size, features, scene, style, pain, gain, usp, emos, refs, fw: selectedFw };
 
   const steps = customCarouselSteps.slice(0, selectedImageCount);
@@ -2163,7 +2163,7 @@ function buildEnPrompt(ctx, type, step) {
   const personaText = getPersonaText('en');
 
   const emoText   = emos.length ? `Emotional tone: evoke feelings of ${emos.join(', ')}.` : '';
-  const refText   = refs.length ? `Style references (from competitor research): ${refs.map(r=>r.note).join('; ')}.` : '';
+  const refText   = refs.length ? `Style references (from competitor/reference research): ${refs.map(r => r.note || r.label || 'reference image').join('; ')}.` : '';
   const uspText   = usp ? `Unique selling point: ${usp}.` : '';
   const posText   = `Positioning: ${pos.light}. Color direction: ${pos.color}.`;
   const seasonTxt = season.desc ? `Seasonal context: ${season.desc}. Seasonal palette: ${season.color}.` : '';
@@ -2236,7 +2236,7 @@ function buildJaPrompt(ctx, type, step) {
   const personaText = getPersonaText('ja');
 
   const emoText   = emos.length ? `感情的なトーン: ${emos.join('・')}を感じさせる表現。` : '';
-  const refText   = refs.length ? `参考スタイル（競合調査より）: ${refs.map(r=>r.note).join('。')}.` : '';
+  const refText   = refs.length ? `参考スタイル（競合・参考画像より）: ${refs.map(r => r.note || r.label || '参考画像').join('。')}.` : '';
   const uspText   = usp ? `USP（唯一の強み）: ${usp}.` : '';
   const posText   = `ポジショニング: ${pos.light}。カラー方向性: ${pos.color}。`;
   const seasonTxt = season.desc ? `季節・シーズン: ${season.desc}。季節カラー: ${season.color}。` : '';
@@ -2375,8 +2375,8 @@ function renderGallery() {
       <button class="ref-item-del" onclick="deleteRef(${img.id})">×</button>
       <div class="ref-item-body">
         <div style="font-size:10px;color:var(--blue);margin-bottom:3px;">${img.label.slice(0,28)}</div>
-        <textarea class="ref-item-note" placeholder="気に入った点のメモ（背景・ライティング・構図など）" onchange="updateNote(${img.id},this.value)">${img.note}</textarea>
-        <div class="ref-item-actions"><button class="ref-select-btn" onclick="toggleRef(${img.id})">${img.selected?'✓ 選択中':'参考に使う'}</button></div>
+        <textarea class="ref-item-note" placeholder="メモ任意（例: ライティングが好き・背景の雰囲気を参考に）" onchange="updateNote(${img.id},this.value)">${img.note}</textarea>
+        <div class="ref-item-actions"><button class="ref-select-btn" onclick="toggleRef(${img.id})">${img.selected?'✓ プロンプトに反映中':'プロンプトに反映する'}</button></div>
       </div>`;
     g.appendChild(d);
   });
