@@ -677,11 +677,11 @@
   <div class="card">
     <h2>① 商品情報 <span class="sync-badge" id="syncBadge" style="display:none;">🔗 販売戦略から引継ぎ済み</span></h2>
     <div class="field">
-      <label>商品名<span class="required">*</span></label>
+      <label>商品名</label>
       <input type="text" id="productName" placeholder="例: ステンレス製タンブラー 500ml">
     </div>
     <div class="field">
-      <label>カテゴリ<span class="required">*</span></label>
+      <label>カテゴリ</label>
       <select id="category">
         <option value="">-- 選択 --</option>
         <option value="kitchen">キッチン・食器</option>
@@ -1106,11 +1106,11 @@
 
     <div class="grid-2">
       <div class="field">
-        <label>商品名・型番<span class="required">*</span></label>
+        <label>商品名・型番</label>
         <input type="text" id="strategyProductName" placeholder="例: ステンレスタンブラー 500ml シルバー" oninput="SD.productName=this.value">
       </div>
       <div class="field">
-        <label>商品カテゴリ<span class="required">*</span></label>
+        <label>商品カテゴリ</label>
         <select id="strategyCategory" onchange="SD.category=this.value">
           <option value="">カテゴリを選択</option>
           <option value="サプリメント・健康食品">サプリメント・健康食品</option>
@@ -1150,7 +1150,7 @@
     <h2>⭐ STEP 2 — 商品の特徴・強み</h2>
 
     <div class="field">
-      <label>商品の使い方・主な特徴<span class="required">*</span></label>
+      <label>商品の使い方・主な特徴</label>
       <div class="hint">どんな場面で・どう使うか。機能・成分・素材など具体的に</div>
       <textarea id="strategyUsage" style="min-height:100px;" oninput="SD.usage=this.value"
         placeholder="例:&#10;・保温6時間・保冷8時間の真空二重断熱タンブラー&#10;・蓋が片手で開くワンタッチ設計（競合は両手必要）&#10;・食洗機対応で洗いやすい&#10;・容量500ml / 重量280g"></textarea>
@@ -1189,7 +1189,7 @@
     <h2>🎯 STEP 3 — ターゲット客層</h2>
 
     <div class="field">
-      <label>ターゲット客層<span class="required">*</span></label>
+      <label>ターゲット客層</label>
       <div class="hint">誰に向けた商品か（年齢・性別・ライフスタイル・状況など）</div>
       <textarea id="strategyTarget" style="min-height:80px;" oninput="SD.target=this.value"
         placeholder="例:&#10;・30〜40代の働く女性&#10;・毎朝コーヒーを飲む習慣がある&#10;・バッグに入れて通勤・外出する&#10;・デザインにこだわりを持つ"></textarea>
@@ -1876,8 +1876,7 @@ let selectedVariations = new Set();
 function generateVariations() {
   const name = document.getElementById('productName').value.trim();
   const category = document.getElementById('category').value;
-  if (!name) { alert('商品名を入力してください。'); return; }
-  if (!category) { alert('カテゴリを選択してください。'); return; }
+  // 必須バリデーションなし — 入力済みの項目だけプロンプトに反映
 
   const color    = document.getElementById('colorMaterial').value.trim();
   const size     = document.getElementById('sizeShape').value.trim();
@@ -2068,7 +2067,7 @@ function generateAllCarousel() {
 
   // 商品名は プロンプト生成タブ or SD から取得
   const name = document.getElementById('productName').value.trim() || SD.productName;
-  if (!name) { alert('先に「プロンプト生成」タブまたは「販売戦略コンサルト」タブで商品名を入力してください。'); return; }
+  // 必須バリデーションなし — 商品名未入力でも生成可能
 
   // プロンプト生成タブのフィールドをSDで補完
   if (SD.productName && !document.getElementById('productName').value.trim()) {
@@ -2390,16 +2389,7 @@ function updateNote(id,v) { const i=refImages.find(r=>r.id===id); if(i) i.note=v
 let currentWizardStep = 1;
 
 function goToStep(n) {
-  // バリデーション（必須項目）
-  if (n > 1 && !document.getElementById('strategyProductName').value.trim()) {
-    alert('商品名を入力してください。'); goToStep(1); return;
-  }
-  if (n > 2 && !document.getElementById('strategyUsage').value.trim()) {
-    alert('商品の特徴・使い方を入力してください。'); goToStep(2); return;
-  }
-  if (n > 3 && !document.getElementById('strategyTarget').value.trim()) {
-    alert('ターゲット客層を入力してください。'); goToStep(3); return;
-  }
+  // バリデーションなし — 任意の順序でステップ移動可能
 
   currentWizardStep = n;
   // パネル切り替え
@@ -2653,7 +2643,7 @@ function copyStrategyPrompt(idx) {
 function generateStrategyPrompts() {
   const productName = document.getElementById('strategyProductName').value.trim();
   const usage       = document.getElementById('strategyUsage').value.trim();
-  if (!usage) { alert('商品の使い方・特徴の説明を入力してください。'); return; }
+  // 必須バリデーションなし
 
   const category    = document.getElementById('strategyCategory').value;
   const target      = document.getElementById('strategyTarget').value.trim();
