@@ -836,6 +836,12 @@
       </select>
     </div>
 
+    <div class="field" style="margin-top:12px;">
+      <label>人物・背景・場面など（商品以外に生成してほしいもの）</label>
+      <div class="hint">モデル・背景・小道具・シーンの雰囲気など自由に記入してください</div>
+      <textarea id="extraElements" placeholder="例:&#10;・30代女性モデルがソファでくつろいでいる&#10;・白を基調とした清潔感のある部屋&#10;・朝の明るい自然光、観葉植物が背景に&#10;・カフェ風のテーブルセット" style="min-height:90px;"></textarea>
+    </div>
+
     <!-- 参考画像パネル（折りたたみ） -->
     <div class="ref-panel-toggle" id="refPanelToggle" onclick="toggleRefPanel()">
       <div class="rpt-left">
@@ -1888,7 +1894,8 @@ function generateVariations() {
   const usp      = document.getElementById('usp').value.trim();
   const emos     = getSelectedEmos();
   const refs     = refImages.filter(r => r.selected);
-  const ctx      = { name, category, color, size, features, scene, style, pain, gain, usp, emos, refs, fw: selectedFw };
+  const extra    = document.getElementById('extraElements') ? document.getElementById('extraElements').value.trim() : '';
+  const ctx      = { name, category, color, size, features, scene, style, pain, gain, usp, emos, refs, extra, fw: selectedFw };
 
   selectedVariations.clear();
   document.getElementById('variationsEmpty').style.display = 'none';
@@ -2090,7 +2097,8 @@ function generateAllCarousel() {
   const usp      = document.getElementById('usp').value.trim() || SD.usp;
   const emos     = getSelectedEmos();
   const refs     = refImages.filter(r => r.selected);
-  const ctx = { name, color, size, features, scene, style, pain, gain, usp, emos, refs, fw: selectedFw };
+  const extra    = document.getElementById('extraElements') ? document.getElementById('extraElements').value.trim() : '';
+  const ctx = { name, color, size, features, scene, style, pain, gain, usp, emos, refs, extra, fw: selectedFw };
 
   const steps = customCarouselSteps.slice(0, selectedImageCount);
 
@@ -2154,7 +2162,7 @@ const styleJa = {
 
 // ===== 英語プロンプト =====
 function buildEnPrompt(ctx, type, step) {
-  const { name, color, size, features, scene, style, pain, gain, usp, emos, refs, fw } = ctx;
+  const { name, color, size, features, scene, style, pain, gain, usp, emos, refs, extra, fw } = ctx;
   const s = styleEn[style] || styleEn.clean;
   const pos = getPosData('en');
   const season = getSeasonData('en');
@@ -2163,6 +2171,7 @@ function buildEnPrompt(ctx, type, step) {
 
   const emoText   = emos.length ? `Emotional tone: evoke feelings of ${emos.join(', ')}.` : '';
   const refText   = refs.length ? `Style references (from competitor/reference research): ${refs.map(r => r.note || r.label || 'reference image').join('; ')}.` : '';
+  const extraText = extra ? `Additional scene elements: ${extra.replace(/\n/g, ' / ')}.` : '';
   const uspText   = usp ? `Unique selling point: ${usp}.` : '';
   const posText   = `Positioning: ${pos.light}. Color direction: ${pos.color}.`;
   const seasonTxt = season.desc ? `Seasonal context: ${season.desc}. Seasonal palette: ${season.color}.` : '';
@@ -2218,6 +2227,7 @@ ${posText}
 ${colorPalette}
 ${seasonTxt}
 ${emoText}
+${extraText}
 ${refText}
 
 Instruction: ${instruction}
@@ -2227,7 +2237,7 @@ Technical: ${getSizeText('en')}, sRGB, ${getFormat()} format. No text overlays, 
 
 // ===== 日本語プロンプト =====
 function buildJaPrompt(ctx, type, step) {
-  const { name, color, size, features, scene, style, pain, gain, usp, emos, refs, fw } = ctx;
+  const { name, color, size, features, scene, style, pain, gain, usp, emos, refs, extra, fw } = ctx;
   const s = styleJa[style] || styleJa.clean;
   const pos = getPosData('ja');
   const season = getSeasonData('ja');
@@ -2236,6 +2246,7 @@ function buildJaPrompt(ctx, type, step) {
 
   const emoText   = emos.length ? `感情的なトーン: ${emos.join('・')}を感じさせる表現。` : '';
   const refText   = refs.length ? `参考スタイル（競合・参考画像より）: ${refs.map(r => r.note || r.label || '参考画像').join('。')}.` : '';
+  const extraText = extra ? `追加で生成してほしい要素（人物・背景・場面など）: ${extra.replace(/\n/g, ' / ')}.` : '';
   const uspText   = usp ? `USP（唯一の強み）: ${usp}.` : '';
   const posText   = `ポジショニング: ${pos.light}。カラー方向性: ${pos.color}。`;
   const seasonTxt = season.desc ? `季節・シーズン: ${season.desc}。季節カラー: ${season.color}。` : '';
@@ -2291,6 +2302,7 @@ ${posText}
 ${colorPalette}
 ${seasonTxt}
 ${emoText}
+${extraText}
 ${refText}
 
 指示: ${instruction}
